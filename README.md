@@ -1,3 +1,15 @@
+---
+title: Pathways
+emoji: 🛤️
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+short_description: AI navigator for post-incarceration reentry in Texas (FastAPI + LangGraph + Claude)
+---
+
 # Pathways
 
 A conversational AI navigator for people leaving incarceration in Texas. Built as a Claude Code architecture: layered Skills, sub-agents, hooks, and MCP servers composed into one reliable workflow.
