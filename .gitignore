@@ -1,0 +1,46 @@
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Node (for the Next.js PWA, when added)
+node_modules/
+.next/
+out/
+.turbo/
+
+# Claude Code local artifacts
+.claude/cache/
+.claude/.local/
+.claude/sessions/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Local data
+data/local/
+*.sqlite
+*.db

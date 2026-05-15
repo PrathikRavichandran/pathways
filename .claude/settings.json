@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "sonnet",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "WebFetch(domain:niccc.nationalreentryresourcecenter.org)",
+      "WebFetch(domain:www.tdcj.texas.gov)",
+      "WebFetch(domain:www.twc.texas.gov)",
+      "WebFetch(domain:www.hhs.texas.gov)",
+      "mcp__pathways-corpus__*",
+      "mcp__tx-resources__*"
+    ],
+    "deny": [
+      "Bash(rm:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Write(/etc/**)",
+      "Write(~/.ssh/**)",
+      "Write(**/.env)",
+      "Write(**/.env.*)"
+    ],
+    "ask": [
+      "Write",
+      "Edit",
+      "Bash",
+      "mcp__twilio-sms__send_sms"
+    ]
+  },
+  "allowManagedHooksOnly": true,
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/crisis_keyword_check.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Bash|mcp__pathways-postgres__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/pii_redact.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__pathways-corpus__search_corpus|mcp__tx-resources__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/rag_confidence_gate.py"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "PATHWAYS_STATE": "TX",
+    "PATHWAYS_DEPLOY_MODE": "demo",
+    "PATHWAYS_CONFIDENCE_FLOOR": "0.62"
+  }
+}

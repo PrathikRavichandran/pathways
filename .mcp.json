@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "pathways-corpus": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_servers/pathways_corpus/server.py"],
+      "env": {
+        "PATHWAYS_CORPUS_PATH": "${CLAUDE_PROJECT_DIR}/mcp_servers/pathways_corpus/corpus.json"
+      }
+    },
+    "tx-resources": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_servers/tx_resources/server.py"],
+      "env": {
+        "TX_RESOURCES_PATH": "${CLAUDE_PROJECT_DIR}/mcp_servers/tx_resources/resources.json"
+      }
+    },
+    "twilio-sms": {
+      "type": "http",
+      "url": "http://localhost:8001/mcp",
+      "env": {
+        "TWILIO_ACCOUNT_SID": "${TWILIO_ACCOUNT_SID}",
+        "TWILIO_AUTH_TOKEN": "${TWILIO_AUTH_TOKEN}",
+        "TWILIO_FROM_NUMBER": "${TWILIO_FROM_NUMBER}"
+      }
+    }
+  }
+}
