@@ -1,0 +1,1053 @@
+{
+  "_metadata": {
+    "name": "pathways-corpus-tx-v0.1",
+    "description": "Curated Texas collateral consequences and reentry-related citations, harvested from public sources for use as a retrieval substrate for the Pathways navigator.",
+    "sources": [
+      "Texas State Law Library — Restrictions After a Criminal Conviction guide (https://guides.sll.texas.gov/criminal-conviction-restrictions, last updated 2026-05-04)",
+      "NICCC — National Inventory of Collateral Consequences of Conviction (https://niccc.nationalreentryresourcecenter.org/)",
+      "Texas Statutes — statutes.capitol.texas.gov",
+      "U.S. Code — uscode.house.gov",
+      "HUD — hud.gov"
+    ],
+    "disclaimer": "This corpus is for navigation purposes only and is not legal advice. Statutory text changes; verify current language at the cited source before relying on any entry. Entries marked source=general_knowledge_tx_statute were added to round out the topical coverage (record clearing, benefits, housing, drivers license, parole) and reflect the author's best-effort summary of widely-known TX provisions; they should be re-verified against the cited statute before production use.",
+    "version": "0.1.0",
+    "last_built": "2026-05-15",
+    "state_scope": "TX",
+    "entry_count": 65
+  },
+  "entries": [
+    {
+      "id": "tx-occ-53-021",
+      "citation": "Texas Occupations Code § 53.021",
+      "summary": "Allows a state licensing authority to deny, revoke, or suspend an occupational license if a person is imprisoned after a felony conviction, was convicted of an offense that directly relates to the duties and responsibilities of the occupation, was convicted of a sexually violent offense, or was convicted of an offense listed in Article 42A.054 of the Code of Criminal Procedure.",
+      "url": "https://statutes.capitol.texas.gov/Docs/OC/htm/OC.53.htm#53.021",
+      "category": "employment",
+      "subcategory": "occupational_licensing",
+      "tags": [
+        "license",
+        "occupation",
+        "tdlr",
+        "denial",
+        "revocation"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ccp-42a-054",
+      "citation": "Texas Code of Criminal Procedure Art. 42A.054",
+      "summary": "Lists offenses (including sexual assault, indecency with a child, murder, aggravated kidnapping) that trigger automatic licensing-authority denial under Occupations Code § 53.021 and other consequences.",
+      "url": "http://www.statutes.legis.state.tx.us/GetStatute.aspx?Code=CR&Value=42A.054",
+      "category": "employment",
+      "subcategory": "occupational_licensing",
+      "tags": [
+        "license",
+        "violent_offense",
+        "sex_offense",
+        "automatic_bar"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-bc-51-161",
+      "citation": "Texas Business & Commerce Code § 51.161",
+      "summary": "A franchise (\"business opportunity\") disclosure statement must disclose if certain people have been convicted of certain felonies in the past seven fiscal years.",
+      "url": "https://statutes.capitol.texas.gov/Docs/BC/htm/BC.51.htm#51.161",
+      "category": "employment",
+      "subcategory": "business",
+      "tags": [
+        "franchise",
+        "disclosure",
+        "business_ownership"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-bc-102-002",
+      "citation": "Texas Business & Commerce Code § 102.002",
+      "summary": "A registered sex offender may not wholly or partially own a sexually oriented business.",
+      "url": "https://statutes.capitol.texas.gov/Docs/BC/htm/BC.102.htm#102.002",
+      "category": "employment",
+      "subcategory": "business",
+      "tags": [
+        "sex_offender",
+        "business_ownership"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-bc-102-003",
+      "citation": "Texas Business & Commerce Code § 102.003",
+      "summary": "A registered sex offender cannot operate, manage, or be an employee of a sexually oriented business.",
+      "url": "https://statutes.capitol.texas.gov/Docs/BC/htm/BC.102.htm#102.003",
+      "category": "employment",
+      "subcategory": "business",
+      "tags": [
+        "sex_offender",
+        "employment_bar"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-bo-9-151",
+      "citation": "Texas Business Organizations Code § 9.151",
+      "summary": "A court may revoke the registration of a foreign filing entity if the entity or a high managerial agent of the entity has been convicted of a felony committed in the conduct of the entity's affairs.",
+      "url": "https://statutes.capitol.texas.gov/Docs/BO/htm/BO.9.htm#9.151",
+      "category": "employment",
+      "subcategory": "business",
+      "tags": [
+        "business_entity",
+        "registration",
+        "revocation"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-cp-145-002",
+      "citation": "Texas Civil Practice & Remedies Code § 145.002 (Sue Weaver Act)",
+      "summary": "Before hiring an employee in a position whose duties include entering another person's residence, an in-home service company or residential delivery company must obtain all criminal history record information or verify the person holds a current Texas occupational license issued by an authority that performed a criminal history background check.",
+      "url": "https://statutes.capitol.texas.gov/Docs/CP/htm/CP.145.htm#145.002",
+      "category": "employment",
+      "subcategory": "background_checks",
+      "tags": [
+        "in_home_service",
+        "background_check",
+        "sue_weaver_act"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ab-11-46",
+      "citation": "Texas Alcoholic Beverage Code § 11.46",
+      "summary": "The Texas Alcoholic Beverage Commission (TABC) may deny any permit if less than 5 years have passed since the termination of a sentence imposed for a felony conviction.",
+      "url": "https://statutes.capitol.texas.gov/Docs/AL/htm/AL.11.htm#11.46",
+      "category": "employment",
+      "subcategory": "alcohol_licensing",
+      "tags": [
+        "tabc",
+        "permit",
+        "5_year_lookback"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ab-11-61",
+      "citation": "Texas Alcoholic Beverage Code § 11.61",
+      "summary": "The Texas Alcoholic Beverage Commission may cancel or suspend any permit if the permit holder is convicted of a felony.",
+      "url": "https://statutes.capitol.texas.gov/Docs/AL/htm/AL.11.htm#11.61",
+      "category": "employment",
+      "subcategory": "alcohol_licensing",
+      "tags": [
+        "tabc",
+        "permit",
+        "felony"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ab-61-42",
+      "citation": "Texas Alcoholic Beverage Code § 61.42",
+      "summary": "TABC shall deny an application for a license as a distributor or retailer if the commission has reasonable grounds to believe the applicant was finally convicted of a felony during the five years before filing their application.",
+      "url": "https://statutes.capitol.texas.gov/Docs/AL/htm/AL.61.htm#61.42",
+      "category": "employment",
+      "subcategory": "alcohol_licensing",
+      "tags": [
+        "tabc",
+        "distributor",
+        "retailer",
+        "5_year_lookback"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ed-12-120",
+      "citation": "Texas Education Code § 12.120",
+      "summary": "A person may not serve as a member of the governing body of a charter school if convicted of certain felonies.",
+      "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.12.htm#12.120",
+      "category": "employment",
+      "subcategory": "education",
+      "tags": [
+        "charter_school",
+        "board",
+        "felony"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ed-ch-21",
+      "citation": "Texas Education Code Ch. 21",
+      "summary": "Chapter includes criminal history restrictions for Texas teachers, including grounds for suspension or revocation of teaching certificates.",
+      "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.21.htm",
+      "category": "employment",
+      "subcategory": "education",
+      "tags": [
+        "teacher",
+        "certification",
+        "school"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ed-ch-22",
+      "citation": "Texas Education Code Ch. 22",
+      "summary": "Chapter includes criminal history restrictions for Texas school district employees and volunteers.",
+      "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.22.htm",
+      "category": "employment",
+      "subcategory": "education",
+      "tags": [
+        "school_employee",
+        "volunteer",
+        "criminal_history"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ed-44-034",
+      "citation": "Texas Education Code § 44.034",
+      "summary": "A person or business entity that enters into a contract with a school district must give advance notice if the person or an owner or operator of the entity has been convicted of a felony.",
+      "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.44.htm#44.034",
+      "category": "employment",
+      "subcategory": "education",
+      "tags": [
+        "school_contractor",
+        "disclosure",
+        "felony"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ed-132-059",
+      "citation": "Texas Education Code § 132.059",
+      "summary": "The Texas Workforce Commission may deny, suspend, or revoke the registration of a representative of a career school or college if they were convicted of a felony.",
+      "url": "https://statutes.capitol.texas.gov/Docs/ED/htm/ED.132.htm#132.059",
+      "category": "employment",
+      "subcategory": "education",
+      "tags": [
+        "career_school",
+        "twc",
+        "felony"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-fi-33-103",
+      "citation": "Texas Finance Code § 33.103",
+      "summary": "A director of a state bank must have written consent from the banking commissioner if they have a felony conviction.",
+      "url": "https://statutes.capitol.texas.gov/Docs/FI/htm/FI.33.htm#33.103",
+      "category": "employment",
+      "subcategory": "finance",
+      "tags": [
+        "bank",
+        "director",
+        "felony"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-fi-180-055",
+      "citation": "Texas Finance Code § 180.055",
+      "summary": "Residential mortgage loan originator license may not be issued by the state's savings and mortgage lending commissioner if the applicant has been convicted of a felony and other conditions are met.",
+      "url": "https://statutes.capitol.texas.gov/Docs/FI/htm/FI.180.htm#180.055",
+      "category": "employment",
+      "subcategory": "finance",
+      "tags": [
+        "mortgage",
+        "loan_originator",
+        "felony"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-fi-371-251",
+      "citation": "Texas Finance Code § 371.251",
+      "summary": "A pawnshop license may be revoked by the consumer credit commissioner after determining the pawnbroker has been convicted of a crime directly related to the duties and responsibilities of the occupation.",
+      "url": "https://statutes.capitol.texas.gov/Docs/FI/htm/FI.371.htm#371.251",
+      "category": "employment",
+      "subcategory": "finance",
+      "tags": [
+        "pawnshop",
+        "license",
+        "revocation"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-gv-4007-105",
+      "citation": "Texas Government Code § 4007.105",
+      "summary": "A securities dealer, agent, investment adviser, or investment adviser representative may have their registration denied, suspended, or revoked by the securities commissioner if they are convicted of a felony.",
+      "url": "https://statutes.capitol.texas.gov/Docs/GV/htm/GV.4007.htm#4007.105",
+      "category": "employment",
+      "subcategory": "finance",
+      "tags": [
+        "securities",
+        "investment_adviser",
+        "felony"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-occ-108-subB",
+      "citation": "Texas Occupations Code Ch. 108, Subch. B",
+      "summary": "Requires the automatic denial or revocation of a health care professional license if the applicant or license holder has a conviction for certain offenses.",
+      "url": "https://statutes.capitol.texas.gov/Docs/OC/htm/OC.108.htm#108.052",
+      "category": "employment",
+      "subcategory": "healthcare",
+      "tags": [
+        "healthcare",
+        "license",
+        "automatic_bar"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-occ-108-002",
+      "citation": "Texas Occupations Code § 108.002",
+      "summary": "The board will suspend or revoke a physician's license if it determines that the license holder has been convicted of certain felonies involving drugs.",
+      "url": "https://statutes.capitol.texas.gov/Docs/OC/htm/OC.108.htm#108.002",
+      "category": "employment",
+      "subcategory": "healthcare",
+      "tags": [
+        "physician",
+        "license",
+        "drug_offense"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-hr-32-047",
+      "citation": "Texas Human Resources Code § 32.047",
+      "summary": "A person is permanently prohibited from providing health care services under the Medicaid medical assistance program if they are convicted of an offense arising from a fraudulent act related to Medicaid that includes certain injuries to the elderly or a person with a disability.",
+      "url": "https://statutes.capitol.texas.gov/Docs/HR/htm/HR.32.htm#32.047",
+      "category": "employment",
+      "subcategory": "healthcare",
+      "tags": [
+        "medicaid",
+        "fraud",
+        "permanent_bar"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-hr-36-132",
+      "citation": "Texas Human Resources Code § 36.132",
+      "summary": "Anyone who must obtain an occupational license from various medical boards (Texas Medical Board, Texas Board of Nursing, State Board of Dental Examiners, and others) and is convicted of health care fraud will have their license revoked.",
+      "url": "https://statutes.capitol.texas.gov/Docs/HR/htm/HR.36.htm#36.132",
+      "category": "employment",
+      "subcategory": "healthcare",
+      "tags": [
+        "medical_license",
+        "healthcare_fraud",
+        "revocation"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-hr-42-0523",
+      "citation": "Texas Human Resources Code § 42.0523",
+      "summary": "An applicant for temporary or permanent employment with a licensed child-care facility or registered family home must submit an affidavit swearing they do not have any criminal charges involving any felony.",
+      "url": "https://statutes.capitol.texas.gov/Docs/HR/htm/HR.42.htm#42.0523",
+      "category": "employment",
+      "subcategory": "care_facilities",
+      "tags": [
+        "child_care",
+        "felony_affidavit"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-hr-42-056",
+      "citation": "Texas Human Resources Code § 42.056",
+      "summary": "A licensed child care facility or family home must conduct criminal history checks of each person employed at the facility, any current or prospective foster parent, any prospective adoptive parent, and must immediately terminate the person's employment if the criminal history check precludes the person from being present.",
+      "url": "https://statutes.capitol.texas.gov/Docs/HR/htm/HR.42.htm#42.056",
+      "category": "employment",
+      "subcategory": "care_facilities",
+      "tags": [
+        "child_care",
+        "background_check",
+        "foster",
+        "adoption"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-hr-43-010",
+      "citation": "Texas Human Resources Code § 43.010",
+      "summary": "A child-care administrator or child-placing agency administrator may have their license denied, revoked, suspended, or not renewed based on their criminal history record.",
+      "url": "https://statutes.capitol.texas.gov/Docs/HR/htm/HR.43.htm#43.010",
+      "category": "employment",
+      "subcategory": "care_facilities",
+      "tags": [
+        "child_care",
+        "administrator"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-hs-242-313",
+      "citation": "Texas Health & Safety Code § 242.313",
+      "summary": "A nursing facility administrator's license may be revoked, suspended, or not renewed by the Department of Aging and Disability Services if they are convicted of a felony involving moral turpitude.",
+      "url": "https://statutes.capitol.texas.gov/Docs/HS/htm/HS.242.htm#242.313",
+      "category": "employment",
+      "subcategory": "care_facilities",
+      "tags": [
+        "nursing_facility",
+        "administrator",
+        "moral_turpitude"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-hs-250-006",
+      "citation": "Texas Health & Safety Code § 250.006",
+      "summary": "A person is prohibited from being employed at many facilities licensed by the Department of Aging and Disability Services, the Department of State Health Services, or a local mental health authority if they are convicted of various felony offenses. This includes nursing and assisted living facilities, day activity and health services facilities, adult foster care providers, and mental health services.",
+      "url": "https://statutes.capitol.texas.gov/Docs/HS/htm/HS.250.htm#250.006",
+      "category": "employment",
+      "subcategory": "care_facilities",
+      "tags": [
+        "nursing",
+        "assisted_living",
+        "mental_health",
+        "elder_care"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-lg-87-031",
+      "citation": "Texas Local Government Code § 87.031",
+      "summary": "A county officer is immediately removed from office on conviction for any felony.",
+      "url": "https://statutes.capitol.texas.gov/Docs/LG/htm/LG.87.htm#87.031",
+      "category": "civil_rights",
+      "subcategory": "public_office",
+      "tags": [
+        "county_officer",
+        "automatic_removal",
+        "felony"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-lg-143-056",
+      "citation": "Texas Local Government Code § 143.056",
+      "summary": "Certain police officers and fire fighters may be dismissed after a conviction of a felony or other crime involving moral turpitude.",
+      "url": "https://statutes.capitol.texas.gov/Docs/LG/htm/LG.143.htm#143.056",
+      "category": "employment",
+      "subcategory": "law_enforcement",
+      "tags": [
+        "police",
+        "fire_fighter",
+        "moral_turpitude"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-gv-419-0325",
+      "citation": "Texas Government Code § 419.0325",
+      "summary": "A person may not be certified as fire protection personnel by the Texas Commission on Fire Protection if the criminal history record information does not meet the criteria set by the commission.",
+      "url": "https://statutes.capitol.texas.gov/Docs/GV/htm/GV.419.htm#419.0325",
+      "category": "employment",
+      "subcategory": "law_enforcement",
+      "tags": [
+        "fire_protection",
+        "certification"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-hs-773-0614",
+      "citation": "Texas Health & Safety Code § 773.0614",
+      "summary": "Emergency medical services personnel may have their certification suspended, revoked, or denied if they were convicted of certain offenses that directly relate to the duties and responsibilities of the job.",
+      "url": "https://statutes.capitol.texas.gov/Docs/HS/htm/HS.773.htm#773.0614",
+      "category": "employment",
+      "subcategory": "law_enforcement",
+      "tags": [
+        "ems",
+        "emergency_medical",
+        "certification"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-gv-81-078",
+      "citation": "Texas Government Code § 81.078",
+      "summary": "A district court shall enter an order disbarring an attorney after a final conviction of any felony involving moral turpitude.",
+      "url": "https://statutes.capitol.texas.gov/Docs/GV/htm/GV.81.htm#81.078",
+      "category": "employment",
+      "subcategory": "legal",
+      "tags": [
+        "attorney",
+        "disbarment",
+        "moral_turpitude"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-gv-154-110",
+      "citation": "Texas Government Code § 154.110",
+      "summary": "A shorthand court reporter's certification may be revoked, suspended, or not renewed after a final conviction of a felony or misdemeanor that directly relates to the duties and responsibilities of a certified shorthand reporter.",
+      "url": "https://statutes.capitol.texas.gov/Docs/GV/htm/GV.154.htm#154.110",
+      "category": "employment",
+      "subcategory": "legal",
+      "tags": [
+        "court_reporter",
+        "certification"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ble-rule-iv",
+      "citation": "Rules Governing Admission to the Bar of Texas, Rule IV",
+      "summary": "Allows certain felony convictions to be used as a rebuttable presumption that the person lacks good moral character and fitness for a period of 5 years from the conviction.",
+      "url": "https://ble.texas.gov/rules",
+      "category": "employment",
+      "subcategory": "legal",
+      "tags": [
+        "bar_admission",
+        "moral_character",
+        "5_year_lookback"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-in-801-151",
+      "citation": "Texas Insurance Code § 801.151",
+      "summary": "An insurer may have their certificate of authority denied by the Texas Department of Insurance if a corporate officer or member of the board of directors has been convicted of a felony involving moral turpitude or a breach of fiduciary duty.",
+      "url": "https://statutes.capitol.texas.gov/Docs/IN/htm/IN.801.htm#801.151",
+      "category": "employment",
+      "subcategory": "insurance",
+      "tags": [
+        "insurer",
+        "corporate_officer",
+        "moral_turpitude"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-in-4102-053",
+      "citation": "Texas Insurance Code § 4102.053",
+      "summary": "The insurance commissioner may issue a public insurance adjuster license to a Texas resident. The person must not have been convicted of a felony within the last 10 years, unless they have received a full pardon.",
+      "url": "https://statutes.capitol.texas.gov/Docs/IN/htm/IN.4102.htm#4102.053",
+      "category": "employment",
+      "subcategory": "insurance",
+      "tags": [
+        "insurance_adjuster",
+        "10_year_lookback",
+        "pardon"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-in-4005-101",
+      "citation": "Texas Insurance Code § 4005.101",
+      "summary": "The Department of Insurance may deny a license application or discipline a license holder if they determine the applicant, officer, director, or shareholder has been convicted of a felony.",
+      "url": "https://statutes.capitol.texas.gov/Docs/IN/htm/IN.4005.htm#4005.101",
+      "category": "employment",
+      "subcategory": "insurance",
+      "tags": [
+        "insurance_license",
+        "felony"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-const-art-6-1",
+      "citation": "Texas Constitution, Article 6, Section 1",
+      "summary": "Governs the classes of persons not allowed to vote in Texas, including persons convicted of certain crimes who have not yet fully discharged their sentence.",
+      "url": "https://statutes.capitol.texas.gov/Docs/CN/htm/CN.6.htm#6.1",
+      "category": "civil_rights",
+      "subcategory": "voting",
+      "tags": [
+        "voting",
+        "constitutional",
+        "disqualification"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-el-11-002",
+      "citation": "Texas Election Code § 11.002",
+      "summary": "Governs who is qualified to vote in Texas. A person convicted of a felony is eligible to vote once they have fully discharged their sentence (including prison time, parole, supervision, and probation) or have been pardoned.",
+      "url": "https://statutes.capitol.texas.gov/Docs/EL/htm/EL.11.htm#11.002",
+      "category": "civil_rights",
+      "subcategory": "voting",
+      "tags": [
+        "voting",
+        "eligibility",
+        "fully_discharged"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-el-13-001",
+      "citation": "Texas Election Code § 13.001",
+      "summary": "Governs who is eligible to register to vote in Texas. Persons with a felony conviction must have completely discharged their sentence before registering.",
+      "url": "https://statutes.capitol.texas.gov/Docs/EL/htm/EL.13.htm#13.001",
+      "category": "civil_rights",
+      "subcategory": "voting",
+      "tags": [
+        "voter_registration"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-el-16-031",
+      "citation": "Texas Election Code § 16.031",
+      "summary": "A voter's registration shall be canceled immediately upon receipt of notice of a felony conviction.",
+      "url": "https://statutes.capitol.texas.gov/Docs/EL/htm/EL.16.htm#16.031",
+      "category": "civil_rights",
+      "subcategory": "voting",
+      "tags": [
+        "voter_registration",
+        "cancellation"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-cp-86-002",
+      "citation": "Texas Civil Practice & Remedies Code § 86.002",
+      "summary": "A person convicted of a felony or misdemeanor may not recover damages for an injury sustained during the commission of the felony or misdemeanor if the injury would not have been sustained but for the commission of the crime.",
+      "url": "https://statutes.capitol.texas.gov/Docs/CP/htm/CP.86.htm#86.002",
+      "category": "civil_rights",
+      "subcategory": "court_procedures",
+      "tags": [
+        "civil_damages",
+        "injury"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-cp-103-154",
+      "citation": "Texas Civil Practice & Remedies Code § 103.154",
+      "summary": "Compensation payments for wrongful termination terminate if the claimant is later convicted of a crime punishable as a felony.",
+      "url": "https://statutes.capitol.texas.gov/Docs/CP/htm/CP.103.htm#103.154",
+      "category": "civil_rights",
+      "subcategory": "court_procedures",
+      "tags": [
+        "wrongful_termination",
+        "compensation"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ccp-35-16",
+      "citation": "Texas Code of Criminal Procedure Art. 35.16",
+      "summary": "An objection can be made to a particular juror if the juror has been convicted or indicted of a felony or misdemeanor theft.",
+      "url": "https://statutes.capitol.texas.gov/Docs/CR/htm/CR.35.htm#35.16",
+      "category": "civil_rights",
+      "subcategory": "court_procedures",
+      "tags": [
+        "juror",
+        "challenge",
+        "petit_jury"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ccp-35-19",
+      "citation": "Texas Code of Criminal Procedure Art. 35.19",
+      "summary": "A juror is disqualified from serving if a challenge has been raised due to the juror's conviction or indictment of a felony or misdemeanor theft.",
+      "url": "https://statutes.capitol.texas.gov/Docs/CR/htm/CR.35.htm#35.19",
+      "category": "civil_rights",
+      "subcategory": "court_procedures",
+      "tags": [
+        "juror",
+        "disqualification"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ccp-19a-101",
+      "citation": "Texas Code of Criminal Procedure Art. 19A.101",
+      "summary": "A juror is disqualified from serving on a grand jury if they have been convicted or indicted for a felony or misdemeanor theft.",
+      "url": "https://statutes.capitol.texas.gov/Docs/CR/htm/CR.19A.htm#19A.101",
+      "category": "civil_rights",
+      "subcategory": "court_procedures",
+      "tags": [
+        "grand_jury",
+        "disqualification"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-gv-62-102",
+      "citation": "Texas Government Code § 62.102",
+      "summary": "A person is disqualified to serve as a petit juror if the person has been convicted of a felony or misdemeanor theft.",
+      "url": "https://statutes.capitol.texas.gov/Docs/GV/htm/GV.62.htm#62.102",
+      "category": "civil_rights",
+      "subcategory": "court_procedures",
+      "tags": [
+        "petit_juror",
+        "disqualification"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-gv-493-015",
+      "citation": "Texas Government Code § 493.015",
+      "summary": "The Texas Department of Criminal Justice shall notify the U.S. Immigration and Naturalization Service of any nonimmigrant or non-citizen convicted of a felony and in the custody of the Texas Department of Criminal Justice.",
+      "url": "https://statutes.capitol.texas.gov/Docs/GV/htm/GV.493.htm#493.015",
+      "category": "civil_rights",
+      "subcategory": "immigration",
+      "tags": [
+        "immigration",
+        "tdcj_notification"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "usc-8-1101-a-43",
+      "citation": "8 U.S.C. § 1101(a)(43)",
+      "summary": "Federal immigration law defining \"aggravated felonies\" — a category that encompasses many different misdemeanor and felony offenses and triggers deportation, ineligibility for relief, and other immigration consequences.",
+      "url": "https://uscode.house.gov/view.xhtml?path=/prelim@title8/chapter12/subchapter1&edition=prelim",
+      "category": "civil_rights",
+      "subcategory": "immigration",
+      "tags": [
+        "aggravated_felony",
+        "deportation",
+        "federal"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "usc-8-1227",
+      "citation": "8 U.S.C. § 1227",
+      "summary": "Federal statute on classes of aliens subject to deportation, including those with certain criminal convictions, those inadmissible at time of entry, those who failed to register, and those subject to security considerations.",
+      "url": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title8-section1227&num=0&edition=prelim",
+      "category": "civil_rights",
+      "subcategory": "immigration",
+      "tags": [
+        "deportation",
+        "removal",
+        "federal"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-const-art-16-2",
+      "citation": "Texas Constitution, Article 16, Section 2",
+      "summary": "Persons convicted of bribery, perjury, forgery, or other high crimes shall be excluded from office.",
+      "url": "https://statutes.capitol.texas.gov/Docs/CN/htm/CN.16.htm#16.2",
+      "category": "civil_rights",
+      "subcategory": "public_office",
+      "tags": [
+        "public_office",
+        "constitutional",
+        "high_crimes"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-lg-21-031",
+      "citation": "Texas Local Government Code § 21.031",
+      "summary": "A mayor or other member of a general-law municipality's governing body is immediately removed from office on conviction for any felony.",
+      "url": "https://statutes.capitol.texas.gov/Docs/LG/htm/LG.21.htm#21.031",
+      "category": "civil_rights",
+      "subcategory": "public_office",
+      "tags": [
+        "mayor",
+        "municipal",
+        "automatic_removal"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-el-141-001",
+      "citation": "Texas Election Code § 141.001",
+      "summary": "A person is ineligible to be a candidate for, or elected or appointed to, public elective office if they have been convicted of a felony without being pardoned.",
+      "url": "https://statutes.capitol.texas.gov/Docs/EL/htm/EL.141.htm#141.001",
+      "category": "civil_rights",
+      "subcategory": "public_office",
+      "tags": [
+        "candidacy",
+        "public_office",
+        "pardon"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-pr-209-00591",
+      "citation": "Texas Property Code § 209.00591",
+      "summary": "A person is prohibited from serving on an HOA board if the board member was convicted of a felony or crime involving moral turpitude within a 20-year period.",
+      "url": "https://statutes.capitol.texas.gov/Docs/PR/htm/PR.209.htm#209.00591",
+      "category": "civil_rights",
+      "subcategory": "public_office",
+      "tags": [
+        "hoa",
+        "board",
+        "20_year_lookback"
+      ],
+      "state": "TX",
+      "source": "tx_state_law_library",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-ccp-55-01",
+      "citation": "Texas Code of Criminal Procedure Art. 55.01 (Expunction)",
+      "summary": "Authorizes a petition for expunction of arrest records. Eligibility is narrow: typically applies to arrests that did not lead to conviction (acquittal, dismissal, no charges filed) or certain specified situations. An expunction destroys the record; agencies must remove references.",
+      "url": "https://statutes.capitol.texas.gov/Docs/CR/htm/CR.55.htm",
+      "category": "record_clearing",
+      "subcategory": "expunction",
+      "tags": [
+        "expunction",
+        "arrest_record",
+        "acquittal",
+        "dismissal"
+      ],
+      "state": "TX",
+      "source": "general_knowledge_tx_statute",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-gv-411-0735",
+      "citation": "Texas Government Code § 411.0735 (Order of Non-Disclosure)",
+      "summary": "Provides procedure for an order of nondisclosure of criminal history record information for certain misdemeanors after a waiting period. The petitioner must not have been convicted of or placed on deferred adjudication for certain disqualifying offenses during a specified period after community supervision.",
+      "url": "https://statutes.capitol.texas.gov/Docs/GV/htm/GV.411.htm#411.0735",
+      "category": "record_clearing",
+      "subcategory": "non_disclosure",
+      "tags": [
+        "non_disclosure",
+        "misdemeanor",
+        "waiting_period"
+      ],
+      "state": "TX",
+      "source": "general_knowledge_tx_statute",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-gv-411-072",
+      "citation": "Texas Government Code § 411.072 (Automatic Non-Disclosure)",
+      "summary": "Provides for automatic order of nondisclosure for certain first-time misdemeanor convictions for offenses other than those involving family violence, after a waiting period. Eligibility excludes offenses listed in § 411.074(b) such as those requiring sex offender registration, family violence, capital murder, and others.",
+      "url": "https://statutes.capitol.texas.gov/Docs/GV/htm/GV.411.htm#411.072",
+      "category": "record_clearing",
+      "subcategory": "non_disclosure",
+      "tags": [
+        "automatic_non_disclosure",
+        "first_offender"
+      ],
+      "state": "TX",
+      "source": "general_knowledge_tx_statute",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-hr-31-0325",
+      "citation": "Texas Human Resources Code § 31.0325 (TANF / drug felony lookback)",
+      "summary": "Texas has limits on TANF eligibility for individuals with certain felony drug convictions. Texas modified its lifetime ban (federal default under PRWORA) and individuals may be eligible after meeting certain conditions including treatment compliance.",
+      "url": "https://statutes.capitol.texas.gov/Docs/HR/htm/HR.31.htm",
+      "category": "benefits",
+      "subcategory": "tanf",
+      "tags": [
+        "tanf",
+        "drug_felony",
+        "benefits"
+      ],
+      "state": "TX",
+      "source": "general_knowledge_tx_statute",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "usc-7-2015-h",
+      "citation": "7 U.S.C. § 2015(h) (SNAP felony drug ban — state opt-out)",
+      "summary": "Federal SNAP statute imposes a default lifetime ban for drug felony convictions but allows states to opt out or modify. Texas opted out of the federal lifetime ban for SNAP in 2015 — persons with prior drug felony convictions may now be eligible for SNAP in Texas subject to general program rules.",
+      "url": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title7-section2015&num=0&edition=prelim",
+      "category": "benefits",
+      "subcategory": "snap",
+      "tags": [
+        "snap",
+        "food_stamps",
+        "drug_felony",
+        "state_optout"
+      ],
+      "state": "TX",
+      "source": "general_knowledge_federal_statute",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-hhsc-snap-eligibility",
+      "citation": "Texas HHSC SNAP Eligibility Guide",
+      "summary": "Texas Health and Human Services Commission administers SNAP. A prior drug felony conviction does not by itself disqualify an applicant in Texas after the 2015 state opt-out. Applicants must meet income and resource limits and standard SNAP requirements.",
+      "url": "https://www.hhs.texas.gov/services/food/snap-food-benefits",
+      "category": "benefits",
+      "subcategory": "snap",
+      "tags": [
+        "snap",
+        "hhsc",
+        "eligibility"
+      ],
+      "state": "TX",
+      "source": "tx_hhsc",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "hud-pih-2015-19",
+      "citation": "HUD Notice PIH-2015-19 (Public Housing — Use of Arrest Records)",
+      "summary": "HUD guidance to Public Housing Agencies and owners of federally-assisted housing clarifying that an arrest alone is not sufficient to deny admission, terminate assistance, or evict. Convictions may be considered subject to limitations and individualized assessment.",
+      "url": "https://www.hud.gov/sites/documents/PIH2015-19.PDF",
+      "category": "housing",
+      "subcategory": "public_housing",
+      "tags": [
+        "hud",
+        "public_housing",
+        "arrest_record"
+      ],
+      "state": "TX",
+      "source": "hud_guidance",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "hud-mandatory-denials-pha",
+      "citation": "24 CFR § 960.204 (Mandatory denials in PHA admission)",
+      "summary": "Federal regulation requiring Public Housing Agencies to deny admission to persons subject to lifetime sex offender registration and persons convicted of methamphetamine production on federally-assisted property. Other criminal history is subject to PHA discretion under written admission and occupancy policies.",
+      "url": "https://www.ecfr.gov/current/title-24/subtitle-B/chapter-IX/part-960/subpart-B/section-960.204",
+      "category": "housing",
+      "subcategory": "public_housing",
+      "tags": [
+        "pha",
+        "mandatory_denial",
+        "sex_offender",
+        "meth_production"
+      ],
+      "state": "TX",
+      "source": "federal_regulation",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-tn-521-372",
+      "citation": "Texas Transportation Code § 521.372 (License suspension — drug offenses)",
+      "summary": "Texas Department of Public Safety automatically suspends a driver license for 180 days following conviction for certain drug offenses, with a possible extension if the person does not complete required education programs.",
+      "url": "https://statutes.capitol.texas.gov/Docs/TN/htm/TN.521.htm#521.372",
+      "category": "drivers_license",
+      "subcategory": "suspension",
+      "tags": [
+        "drivers_license",
+        "drug_offense",
+        "suspension"
+      ],
+      "state": "TX",
+      "source": "general_knowledge_tx_statute",
+      "last_verified": "2026-05-15"
+    },
+    {
+      "id": "tx-gv-508-001",
+      "citation": "Texas Government Code Ch. 508 (Parole and Mandatory Supervision)",
+      "summary": "Establishes the Texas Board of Pardons and Paroles and rules governing release on parole, mandatory supervision, and conditions of supervision. Violation of conditions can result in revocation and return to TDCJ custody.",
+      "url": "https://statutes.capitol.texas.gov/Docs/GV/htm/GV.508.htm",
+      "category": "supervision",
+      "subcategory": "parole",
+      "tags": [
+        "parole",
+        "mandatory_supervision",
+        "tdcj",
+        "bpp"
+      ],
+      "state": "TX",
+      "source": "general_knowledge_tx_statute",
+      "last_verified": "2026-05-15"
+    }
+  ]
+}
