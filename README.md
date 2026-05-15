@@ -7,7 +7,7 @@ sdk: docker
 app_port: 7860
 pinned: false
 license: mit
-short_description: AI navigator for post-incarceration reentry in Texas (FastAPI + LangGraph + Claude)
+short_description: AI navigator for post-incarceration reentry in Texas
 ---
 
 # Pathways
