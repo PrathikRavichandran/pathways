@@ -9,6 +9,7 @@ import {
 } from "./api";
 import { type Lang, stageHint, t } from "./i18n";
 import { LogoMark, LogoMarkOnSurface, Wordmark } from "./Logo";
+import { MenuButton, MenuDrawer, PageOverlay, type MenuPage } from "./components/Menu";
 
 type Bubble =
   | { kind: "user"; text: string; ts: number }
@@ -82,6 +83,8 @@ export default function App() {
   const install = useInstallPrompt();
   const threadRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activePage, setActivePage] = useState<MenuPage>(null);
 
   // Auto-scroll on new bubble
   useEffect(() => {
@@ -238,6 +241,22 @@ export default function App() {
         onToggleLang={() => setLang(lang === "en" ? "es" : "en")}
         onReset={onReset}
         showReset={hasStarted}
+        onOpenMenu={() => setMenuOpen(true)}
+      />
+
+      <MenuDrawer
+        open={menuOpen}
+        lang={lang}
+        onClose={() => setMenuOpen(false)}
+        onSelect={(p) => {
+          setMenuOpen(false);
+          setActivePage(p);
+        }}
+      />
+      <PageOverlay
+        page={activePage}
+        lang={lang}
+        onClose={() => setActivePage(null)}
       />
 
       <AnimatePresence>
@@ -538,11 +557,13 @@ function Header({
   onToggleLang,
   onReset,
   showReset,
+  onOpenMenu,
 }: {
   lang: Lang;
   onToggleLang: () => void;
   onReset: () => void;
   showReset: boolean;
+  onOpenMenu: () => void;
 }) {
   return (
     <header className="pt-safe sticky top-0 z-30 border-b border-cream-200/70 bg-cream-50/85 backdrop-blur-md dark:border-ink-700 dark:bg-ink-900/85">
@@ -558,6 +579,7 @@ function Header({
           <AnimatePresence initial={false}>
             {showReset && <NewChatButton lang={lang} onClick={onReset} />}
           </AnimatePresence>
+          <MenuButton lang={lang} onClick={onOpenMenu} />
         </div>
       </div>
     </header>

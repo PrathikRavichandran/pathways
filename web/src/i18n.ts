@@ -83,6 +83,15 @@ export const T = {
     en: "Free, confidential. We never share your number.",
     es: "Gratis, confidencial. Nunca compartimos tu número.",
   },
+
+  // Menu + pages
+  menu_open: { en: "Open menu", es: "Abrir menú" },
+  menu_close: { en: "Close menu", es: "Cerrar menú" },
+  back_to_chat: { en: "Back to chat", es: "Volver al chat" },
+  menu_about: { en: "About Pathways", es: "Acerca de Pathways" },
+  menu_learn: { en: "Understanding reentry", es: "Entendiendo el reingreso" },
+  menu_emergency: { en: "Emergency contacts", es: "Contactos de emergencia" },
+  menu_privacy: { en: "Privacy & trust", es: "Privacidad y confianza" },
 };
 
 export function t(key: keyof typeof T, lang: Lang): string {
