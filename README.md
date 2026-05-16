@@ -21,7 +21,7 @@ A conversational AI navigator for people leaving incarceration in Texas. Built a
 
 This repo is both a real product-in-progress *and* an opinionated demonstration of how Claude Code primitives compose when wrong answers cause real harm — legal misinformation, missed deadlines, lost benefits, or a missed crisis signal.
 
-> **Status:** Active development. The architecture is complete and the demo flow runs end-to-end against real Texas statutory data. Tests: **41/41 passing** (hooks + LangGraph end-to-end across 6 conversation paths, plus regression tests for crisis-keyword phrasings discovered in live testing). Twilio dispatch and live Pinecone are stubbed behind interfaces and documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+> **Status:** Active development. The architecture is complete and the demo flow runs end-to-end against real Texas statutory data. Tests: **75/75 passing** (hooks + LangGraph end-to-end across 6 conversation paths, plus regression tests for crisis-keyword phrasings discovered in live testing). Twilio dispatch and live Pinecone are stubbed behind interfaces and documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
@@ -207,14 +207,14 @@ You'll see: `intake-assessment` Skill auto-loads → routes to `housing-pathway`
 | LangGraph state machine | **Real, runs.** 7 nodes wired (intake → retrieve → match → draft → audit → send/escalate), bounded revision loop |
 | All 7 Skills | Real, with realistic content (not stubs) |
 | All 4 sub-agents | Real definitions with frontmatter-enforced capability scoping |
-| All 3 hooks | Real, executable Python; **41/41 hook + graph tests passing** |
+| All 3 hooks | Real, executable Python; **75/75 hook + graph tests passing** |
 | `pathways-corpus` MCP server | **Real**, 65 entries fetched from sll.texas.gov and NICCC, BM25 retrieval, tested |
 | `tx-resources` MCP server | **Real**, 18 curated TX reentry orgs, region-aware filter, tested |
 | `twilio-sms` MCP server | Interface defined, send is stubbed |
 | `pathways-postgres` MCP server | Interface defined, SQL views documented |
 | Pinecone | Local BM25 equivalent in demo; production upgrade path documented |
 | FastAPI ingress | **Real**, `/sms`, `/health`, `/_debug/invoke` routes, lifespan warm-up |
-| Tests | **41/41 passing**: hook unit tests + graph end-to-end tests + crisis-keyword regression suite covering live-discovered phrasings |
+| Tests | **75/75 passing**: hook unit tests + graph end-to-end tests + crisis-keyword regression suite covering live-discovered phrasings |
 
 ## What I'd build next, in order
 

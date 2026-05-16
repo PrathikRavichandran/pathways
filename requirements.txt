@@ -10,12 +10,20 @@ python-dotenv>=1.0.0
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 httpx>=0.27.0
+python-multipart>=0.0.9   # FastAPI Form parsing for Twilio webhook
 
 # MCP
 mcp>=1.0.0
 
 # Retrieval (demo uses in-memory; pinecone is optional for prod)
 rank-bm25>=0.2.2
+
+# Phase 1: stateful intake, Twilio, Postgres checkpointer
+twilio>=9.3.0
+langgraph-checkpoint-sqlite>=2.0.0
+langgraph-checkpoint-postgres>=2.0.0
+psycopg[binary]>=3.2.0   # 3.2+ required by langgraph-checkpoint-postgres (PGcancelConn)
+psycopg-pool>=3.2.0       # connection pool for long-lived PostgresSaver
 
 # Observability
 opentelemetry-api>=1.27.0

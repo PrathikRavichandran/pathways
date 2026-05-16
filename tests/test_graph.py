@@ -22,8 +22,18 @@ def _force_demo_mode(monkeypatch):
 
 @pytest.fixture
 def app():
+    """Stateless compiled graph for Phase 0 single-shot tests.
+
+    Phase 1 added a checkpointer requirement to the default-compiled graph.
+    These tests assert end-to-end routing behavior on a single invocation
+    and pre-set intake_complete=True so slot-filling is bypassed. They use
+    use_checkpointer=False so they do not need a thread_id config.
+
+    Multi-turn slot-filling behavior is covered by tests/test_phase1_intake.py
+    which uses the full checkpointer-enabled graph.
+    """
     from pathways.graph import build_graph
-    return build_graph()
+    return build_graph(use_checkpointer=False)
 
 
 def _final(state_dict_or_obj):
@@ -104,12 +114,16 @@ def test_crisis_short_circuits_to_escalate(app):
     ],
 )
 def test_routing_and_citation(app, message, expected_need, expected_citation_keyword):
-    from pathways.state import CrisisSignal, PathwaysState
+    from pathways.state import CrisisSignal, IntakeStage, PathwaysState
 
     state = PathwaysState(
         session_id="route-test",
         user_message=message,
         crisis=CrisisSignal(fired=False),
+        # Bypass Phase 1 slot-filling so this test asserts the routing+citation
+        # path on a single invocation (which is what it was written to test).
+        intake_complete=True,
+        intake_stage=IntakeStage.DONE,
     )
     result = _final(app.invoke(state))
     assert result["intake"]["top_need"] == expected_need
@@ -176,12 +190,14 @@ def test_audit_blocks_likelihood_promise(app):
 
 
 def test_houston_user_gets_regional_resource(app):
-    from pathways.state import CrisisSignal, PathwaysState
+    from pathways.state import CrisisSignal, IntakeStage, PathwaysState
 
     state = PathwaysState(
         session_id="match-1",
         user_message="I need a shelter in Houston tonight",
         crisis=CrisisSignal(fired=False),
+        intake_complete=True,
+        intake_stage=IntakeStage.DONE,
     )
     result = _final(app.invoke(state))
     assert len(result["matched_resources"]) >= 1

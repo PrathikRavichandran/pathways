@@ -1,5 +1,5 @@
 """
-Pathways state machine — explicit LangGraph wiring.
+Pathways state machine: explicit LangGraph wiring.
 
 This is the central architectural artifact of the repo. The decision to
 write the graph explicitly (rather than as a thin coordinator over a
@@ -21,16 +21,18 @@ single multi-tool agent) buys three things:
    capability to do its job. This mirrors the sub-agent bounded-capability
    pattern at the graph layer.
 
-Topology
---------
+Topology (Phase 1, with slot-filling exit)
+------------------------------------------
 
     START
       │
       ▼
-    ┌──────┐  (crisis fired by hook)  ┌──────────┐
-    │intake├─────────────────────────▶│ escalate │──▶ END
-    └──┬───┘                          └──────────┘
-       │ (normal path)
+    ┌──────┐  (crisis fired by hook)   ┌──────────┐
+    │intake├──────────────────────────▶│ escalate │──▶ END
+    └──┬───┘                           └──────────┘
+       │ (slot still missing)
+       └──────────────────────────────────────────▶ END  (slot prompt shipped)
+       │ (all slots filled)
        ▼
     ┌──────────┐
     │ retrieve │
@@ -53,6 +55,18 @@ Topology
     │ send │──▶ END         │ escalate │──▶ END
     └──────┘                └──────────┘
 
+Phase 1 added the third intake exit ("slot still missing → END"). Before
+Phase 1, intake always continued to retrieve on the first turn. Now it
+can short-circuit back to the user with a slot prompt and resume on the
+next turn (the checkpointer remembers what slots were filled).
+
+Checkpointing
+-------------
+The compiled graph is checkpointer-aware. The checkpointer backend is
+chosen by `PATHWAYS_CHECKPOINT_BACKEND` env var:
+    memory (default), sqlite, postgres
+See pathways/sessions/checkpointer.py for the factory.
+
 Notes on revision loop
 ----------------------
 The draft ⇄ audit loop is bounded by state.MAX_AUDIT_REVISIONS (default 2).
@@ -74,11 +88,18 @@ from pathways.nodes import intake as intake_node
 from pathways.nodes import match as match_node
 from pathways.nodes import retrieve as retrieve_node
 from pathways.nodes import send as send_node
+from pathways.sessions.checkpointer import get_checkpointer
 from pathways.state import PathwaysState
 
 
-def _route_after_intake(state: PathwaysState) -> Literal["retrieve", "escalate"]:
-    return "escalate" if state.next_node == "escalate" else "retrieve"
+def _route_after_intake(state: PathwaysState) -> Literal["retrieve", "escalate", "END"]:
+    """Three exits: continue normally, escalate, or short-circuit to END
+    when intake shipped a slot-filling prompt to the user."""
+    if state.next_node == "escalate":
+        return "escalate"
+    if state.next_node == "END":
+        return "END"
+    return "retrieve"
 
 
 def _route_after_audit(state: PathwaysState) -> Literal["draft", "send", "escalate"]:
@@ -89,12 +110,19 @@ def _route_after_audit(state: PathwaysState) -> Literal["draft", "send", "escala
     return "escalate"
 
 
-def build_graph():
+def build_graph(use_checkpointer: bool = True):
     """Build and compile the Pathways state machine.
 
-    Returns a compiled LangGraph app. Call `app.invoke(state)` to run it,
-    or `app.stream(state)` to observe node-by-node execution (useful for
-    LangSmith tracing and for the FastAPI streaming endpoint).
+    Args:
+        use_checkpointer: If True (default), compile with the
+            configured checkpointer so multi-turn conversations
+            persist between invocations. Pass False in unit tests
+            that want a stateless one-shot graph.
+
+    Returns a compiled LangGraph app. Call:
+        app.invoke({"user_message": "...", "crisis": ...},
+                   config={"configurable": {"thread_id": tid}})
+    for multi-turn.
     """
     workflow = StateGraph(PathwaysState)
 
@@ -108,11 +136,11 @@ def build_graph():
 
     workflow.set_entry_point("intake")
 
-    # intake → retrieve OR escalate (crisis short-circuit)
+    # intake → retrieve OR escalate (crisis) OR END (slot-filling)
     workflow.add_conditional_edges(
         "intake",
         _route_after_intake,
-        {"retrieve": "retrieve", "escalate": "escalate"},
+        {"retrieve": "retrieve", "escalate": "escalate", "END": END},
     )
 
     # Linear retrieve → match → draft
@@ -132,11 +160,13 @@ def build_graph():
     workflow.add_edge("send", END)
     workflow.add_edge("escalate", END)
 
+    if use_checkpointer:
+        return workflow.compile(checkpointer=get_checkpointer())
     return workflow.compile()
 
 
-# Singleton — instantiate lazily so test environments can import the
-# module without paying graph-compile cost.
+# Singleton, instantiated lazily so test environments can import the
+# module without paying graph-compile cost or hitting the DB.
 _APP = None
 
 
@@ -145,3 +175,10 @@ def get_app():
     if _APP is None:
         _APP = build_graph()
     return _APP
+
+
+def reset_app() -> None:
+    """Test helper: drop the cached compiled app so the next
+    get_app() call rebuilds with current env settings."""
+    global _APP
+    _APP = None
