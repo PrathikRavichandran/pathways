@@ -15,8 +15,10 @@ python-multipart>=0.0.9   # FastAPI Form parsing for Twilio webhook
 # MCP
 mcp>=1.0.0
 
-# Retrieval (demo uses in-memory; pinecone is optional for prod)
+# Retrieval (BM25 default; hybrid is opt-in via PATHWAYS_RETRIEVAL_BACKEND=hybrid)
 rank-bm25>=0.2.2
+numpy>=1.26.0
+sentence-transformers>=3.0.0  # BGE-small for hybrid retrieval; CPU-only torch is bundled
 
 # Phase 1: stateful intake, Twilio, Postgres checkpointer
 twilio>=9.3.0

@@ -44,3 +44,7 @@ logs/
 data/local/
 *.sqlite
 *.db
+
+# Generated embedding artifacts (regenerate via scripts/embed_corpus.py)
+mcp_servers/pathways_corpus/corpus_embeddings.npy
+eval-results*.json

@@ -16,33 +16,10 @@ identical.
 from __future__ import annotations
 
 import os
-import sys
 from typing import Any
 
+from pathways.retrieval import get_retriever
 from pathways.state import PathwaysState, Retrieval, TopNeed
-
-
-def _import_corpus_server():
-    """Load mcp_servers/pathways_corpus/server.py under a unique module name.
-
-    Both MCP servers in this repo are named server.py. Plain `import server`
-    caches the first one imported under sys.modules['server'] and breaks the
-    second. Use importlib to load each under its own namespace.
-    """
-    import importlib.util
-    here = os.path.dirname(os.path.abspath(__file__))
-    repo_root = os.path.abspath(os.path.join(here, "..", ".."))
-    server_path = os.path.join(
-        repo_root, "mcp_servers", "pathways_corpus", "server.py"
-    )
-    spec = importlib.util.spec_from_file_location(
-        "pathways_corpus_server", server_path
-    )
-    if spec is None or spec.loader is None:
-        raise ImportError(f"could not load corpus server at {server_path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 # Map TopNeed value → corpus category filter and a query phrase. Keyed by
@@ -71,7 +48,7 @@ def run(state: PathwaysState) -> dict[str, Any]:
     if need_key == TopNeed.UNKNOWN.value:
         return {"next_node": "match"}
 
-    corpus = _import_corpus_server()
+    retriever = get_retriever()
 
     category, default_query = NEED_TO_CORPUS.get(need_key, (None, ""))
     # Prefer the actual user message for the query — it's more specific
@@ -83,9 +60,11 @@ def run(state: PathwaysState) -> dict[str, Any]:
     )
 
     try:
-        result = corpus.search_corpus(query=query, category=category, top_k=5)
-    except Exception as exc:
-        # Resilience: corpus error shouldn't kill the turn.
+        result = retriever.search(query=query, category=category, top_k=5)
+        confidence = result.confidence
+        results_list = result.results
+    except Exception:
+        # Resilience: retrieval error shouldn't kill the turn.
         return {
             "retrievals": state.retrievals + [
                 Retrieval(
@@ -99,14 +78,13 @@ def run(state: PathwaysState) -> dict[str, Any]:
             "next_node": "match",
         }
 
-    confidence = float(result.get("confidence", 0.0))
     floor = float(os.environ.get("PATHWAYS_CONFIDENCE_FLOOR", "0.62"))
 
     retrieval = Retrieval(
         source="pathways-corpus",
         query=query,
         confidence=confidence,
-        results=result.get("results", []),
+        results=results_list,
         gated_low_confidence=(confidence < floor),
     )
 
