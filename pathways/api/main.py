@@ -30,6 +30,7 @@ from contextlib import asynccontextmanager
 from typing import Any, Optional
 
 from fastapi import FastAPI, Form, Request, Response, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -371,10 +372,9 @@ def _read_state(thread_id: str) -> Optional[dict]:
         values = snapshot.values if snapshot else None
         if values is None:
             return None
-        # values is either a dict (most checkpointers) or a Pydantic model.
-        if hasattr(values, "model_dump"):
-            return values.model_dump(mode="json")
-        return dict(values) if not isinstance(values, dict) else values
+        # values is a dict whose values may be Pydantic models (CrisisSignal,
+        # IntakeProfile, etc). jsonable_encoder recurses and serializes them.
+        return jsonable_encoder(values)
     except Exception:
         return None
 
