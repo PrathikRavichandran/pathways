@@ -17,13 +17,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from pathways.dashboard import analytics, writeback
-from pathways.dashboard.auth import Partner, authenticate
+from pathways.dashboard.auth import COOKIE_NAME, Partner, authenticate, _load_tokens
+import hmac as _hmac
 
 _TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 _templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
@@ -36,12 +37,87 @@ def health() -> dict:
     return {"status": "ok", "module": "dashboard", "version": "0.1.0"}
 
 
+# ---------------------------------------------------------------------------
+# Sign-in (browser-friendly): form sets a cookie, the landing page reads it.
+# ---------------------------------------------------------------------------
+
+
+@router.get("/login", response_class=HTMLResponse)
+def login_form(request: Request) -> HTMLResponse:
+    return _templates.TemplateResponse(
+        request=request, name="login.html", context={"error": None},
+    )
+
+
+@router.post("/login")
+def login_submit(request: Request, token: str = Form(...)):
+    """Verify the token; on success, set a cookie and redirect to the
+    landing page. On miss, re-render the form with an error."""
+    token = (token or "").strip()
+    if not token:
+        return _templates.TemplateResponse(
+            request=request, name="login.html",
+            context={"error": "Token can't be empty."},
+            status_code=400,
+        )
+
+    tokens = _load_tokens()
+    # Demo mode: any non-empty token is accepted (mirrors the auth function).
+    valid = not tokens or any(
+        _hmac.compare_digest(token, t) for t in tokens.keys()
+    )
+    if not valid:
+        return _templates.TemplateResponse(
+            request=request, name="login.html",
+            context={"error": "That token didn't match. Try again."},
+            status_code=401,
+        )
+
+    response = RedirectResponse(
+        url="/dashboard/", status_code=status.HTTP_303_SEE_OTHER,
+    )
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+        max_age=60 * 60 * 24 * 30,  # 30 days
+        path="/dashboard",
+    )
+    return response
+
+
+@router.post("/logout")
+def logout(request: Request):
+    response = RedirectResponse(
+        url="/dashboard/login", status_code=status.HTTP_303_SEE_OTHER,
+    )
+    response.delete_cookie(COOKIE_NAME, path="/dashboard")
+    return response
+
+
+# ---------------------------------------------------------------------------
+# Landing
+# ---------------------------------------------------------------------------
+
+
 @router.get("/", response_class=HTMLResponse)
 def landing(
     request: Request,
-    partner: Partner = Depends(authenticate),
     days: int = Query(7, ge=1, le=90),
 ) -> HTMLResponse:
+    # Browser-friendly: if there's no auth, send to the login form
+    # instead of returning a stark 401.
+    try:
+        partner = authenticate(request)
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+            return RedirectResponse(
+                url="/dashboard/login",
+                status_code=status.HTTP_303_SEE_OTHER,
+            )
+        raise
     return _templates.TemplateResponse(
         request=request,
         name="index.html",

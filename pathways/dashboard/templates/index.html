@@ -61,12 +61,21 @@
           <div class="text-xs text-ink-400 uppercase tracking-widest mt-1">Caseworker dashboard</div>
         </div>
       </div>
-      <div class="text-right">
-        <div class="text-sm font-semibold">{{ partner_name }}</div>
-        <div class="text-xs text-ink-400">
-          {% if is_superuser %}all regions · superuser{% else %}{% set ws = scope.get('workforce_regions') or [] %}{% set cs = scope.get('counties') or [] %}{% set rs = scope.get('regions') or [] %}{{ (ws + rs + cs)|join(' · ') or 'unscoped' }}{% endif %}
-          · last {{ days }} day{{ '' if days == 1 else 's' }}
+      <div class="flex items-center gap-3">
+        <div class="text-right">
+          <div class="text-sm font-semibold">{{ partner_name }}</div>
+          <div class="text-xs text-ink-400">
+            {% if is_superuser %}all regions · superuser{% else %}{% set ws = scope.get('workforce_regions') or [] %}{% set cs = scope.get('counties') or [] %}{% set rs = scope.get('regions') or [] %}{{ (ws + rs + cs)|join(' · ') or 'unscoped' }}{% endif %}
+            · last {{ days }} day{{ '' if days == 1 else 's' }}
+          </div>
         </div>
+        <form method="POST" action="/dashboard/logout" class="m-0">
+          <button type="submit"
+                  class="rounded-full border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-600 hover:border-forest-400 hover:text-forest-700"
+                  title="Sign out of this device">
+            Sign out
+          </button>
+        </form>
       </div>
     </div>
   </header>

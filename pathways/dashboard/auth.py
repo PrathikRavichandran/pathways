@@ -78,22 +78,33 @@ def _parse_partner(spec: dict) -> Partner:
     return Partner(name=name, scope=(scope or None))
 
 
-def authenticate(request: Request) -> Partner:
-    """Validate the Authorization: Bearer header and return the matching
-    Partner. Raises 401 on miss; never logs the token value."""
+COOKIE_NAME = "pathways_dashboard_token"
+
+
+def _extract_token(request: Request) -> Optional[str]:
+    """Pull the bearer token from either the Authorization header or
+    the dashboard login cookie. Header wins if both are present."""
     header = request.headers.get("authorization") or ""
     prefix = "bearer "
-    if not header.lower().startswith(prefix):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="missing bearer token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    token = header[len(prefix):].strip()
+    if header.lower().startswith(prefix):
+        token = header[len(prefix):].strip()
+        if token:
+            return token
+    cookie = request.cookies.get(COOKIE_NAME)
+    if cookie:
+        return cookie.strip() or None
+    return None
+
+
+def authenticate(request: Request) -> Partner:
+    """Validate the bearer token from either the Authorization header
+    or the dashboard login cookie. Returns the matching Partner.
+    Raises 401 on miss; never logs the token value."""
+    token = _extract_token(request)
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="empty bearer token",
+            detail="missing bearer token (use /dashboard/login or set Authorization header)",
             headers={"WWW-Authenticate": "Bearer"},
         )
 

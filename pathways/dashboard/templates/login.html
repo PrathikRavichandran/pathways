@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1F4A2C" />
+  <title>Pathways · Dashboard sign-in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" />
+  <style>
+    :root {
+      --forest: #1F4A2C; --forest-deep: #133018;
+      --cream: #FAF6E8; --cream-elev: #FDFBF2;
+      --marigold: #ECB13B;
+      --ink: #22201D; --ink-muted: #6E6A62;
+      --border: #E8DCBC;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; min-height: 100vh; }
+    body {
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 0% -10%, rgba(236,177,59,0.10), transparent 60%),
+        radial-gradient(900px 600px at 100% 0%, rgba(31,74,44,0.08), transparent 60%),
+        var(--cream);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--cream-elev);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 4px 8px rgba(12,10,7,0.06), 0 12px 24px rgba(12,10,7,0.08);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .logo svg { width: 44px; height: 44px; }
+    .wordmark {
+      font-family: "Fraunces", serif;
+      font-weight: 600;
+      font-size: 26px;
+      letter-spacing: -0.01em;
+    }
+    h1 {
+      font-family: "Fraunces", serif;
+      font-weight: 600;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+      margin: 0 0 6px;
+    }
+    p.lede {
+      color: var(--ink-muted);
+      font-size: 14px;
+      line-height: 1.55;
+      margin: 0 0 20px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+    input[type="password"], input[type="text"] {
+      display: block;
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--cream-elev);
+      color: var(--ink);
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    input:focus {
+      border-color: var(--forest);
+      box-shadow: 0 0 0 4px rgba(31,74,44,0.10);
+    }
+    button {
+      margin-top: 16px;
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 14px;
+      background: var(--forest);
+      color: var(--cream);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background-color .15s ease, transform .1s ease;
+    }
+    button:hover { background: var(--forest-deep); }
+    button:active { transform: translateY(1px); }
+    .error {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: #FDECEC;
+      border: 1px solid #F2C2C2;
+      color: #8B1F1F;
+      font-size: 13px;
+    }
+    .hint {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--ink-muted);
+      line-height: 1.55;
+    }
+    .hint code {
+      background: var(--cream);
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="256" height="256" rx="56" fill="#1F4A2C"/>
+        <circle cx="128" cy="84" r="38" fill="#ECB13B" opacity="0.18"/>
+        <line x1="56" y1="206" x2="200" y2="206" stroke="#FAF6E8" stroke-width="4" stroke-linecap="round" opacity="0.45"/>
+        <path d="M 128 206 L 128 92" stroke="#FAF6E8" stroke-width="8" stroke-linecap="round"/>
+        <path d="M 128 156 C 100 152, 76 132, 70 100 C 100 110, 124 128, 128 156 Z" fill="#FAF6E8"/>
+        <path d="M 128 140 C 156 136, 180 116, 186 84 C 156 94, 132 112, 128 140 Z" fill="#FAF6E8"/>
+        <circle cx="128" cy="84" r="14" fill="#ECB13B"/>
+      </svg>
+      <span class="wordmark">Pathways</span>
+    </div>
+    <h1>Caseworker dashboard</h1>
+    <p class="lede">Sign in with the bearer token your partner-org admin gave you. The token is stored as a cookie on this device only.</p>
+    <form method="POST" action="/dashboard/login">
+      <label for="token">Bearer token</label>
+      <input id="token" name="token" type="password" autocomplete="off" required autofocus />
+      <button type="submit">Sign in</button>
+    </form>
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+    <div class="hint">
+      No partner config on this Space? Demo mode is active and any non-empty
+      token works (try <code>demo-token</code>). Real partners get a value
+      from <code>PATHWAYS_DASHBOARD_TOKENS_JSON</code>.
+    </div>
+  </div>
+</body>
+</html>

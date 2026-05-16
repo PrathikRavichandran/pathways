@@ -385,3 +385,103 @@ def test_dashboard_landing_page_renders_html(client):
     body = r.text
     assert "Caseworker dashboard" in body
     assert "Pathways" in body
+
+
+# ---------------------------------------------------------------------------
+# Browser-friendly login (cookie auth)
+# ---------------------------------------------------------------------------
+
+
+def test_login_form_renders(client):
+    r = client.get("/dashboard/login")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    assert "Bearer token" in r.text
+
+
+def test_login_post_with_demo_mode_token_sets_cookie_and_redirects(client):
+    r = client.post(
+        "/dashboard/login",
+        data={"token": "anything-works-in-demo-mode"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert r.headers["location"] == "/dashboard/"
+    # Cookie set
+    set_cookie = r.headers.get("set-cookie", "")
+    assert "pathways_dashboard_token=" in set_cookie
+    assert "Path=/dashboard" in set_cookie or "path=/dashboard" in set_cookie.lower()
+
+
+def test_login_post_rejects_empty_token(client):
+    r = client.post(
+        "/dashboard/login",
+        data={"token": "   "},
+        follow_redirects=False,
+    )
+    assert r.status_code == 400
+    assert "empty" in r.text.lower()
+
+
+def test_login_post_rejects_wrong_token_when_tokens_configured(client, monkeypatch):
+    import json
+    monkeypatch.setenv(
+        "PATHWAYS_DASHBOARD_TOKENS_JSON",
+        json.dumps({"correct-token": {"name": "Houston", "superuser": True}}),
+    )
+    r = client.post(
+        "/dashboard/login",
+        data={"token": "wrong-token"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 401
+    assert "didn" in r.text.lower() or "match" in r.text.lower()
+
+
+def test_cookie_authenticates_subsequent_requests(client):
+    """After login, the cookie alone should authenticate /dashboard/."""
+    login = client.post(
+        "/dashboard/login",
+        data={"token": "demo-cookie-test"},
+        follow_redirects=False,
+    )
+    assert login.status_code == 303
+    # The TestClient keeps the cookie. Visit landing without Authorization header.
+    r = client.get("/dashboard/")
+    assert r.status_code == 200
+    assert "Caseworker dashboard" in r.text
+
+
+def test_unauthenticated_landing_redirects_to_login_not_401(client):
+    """Browser visitors get sent to the login form rather than a 401."""
+    fresh = client.__class__(client.app)  # cookie-free client
+    r = fresh.get("/dashboard/", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"] == "/dashboard/login"
+
+
+def test_logout_clears_cookie_and_redirects(client):
+    # First, sign in.
+    client.post(
+        "/dashboard/login",
+        data={"token": "demo-logout-test"},
+        follow_redirects=False,
+    )
+    # Then sign out.
+    r = client.post("/dashboard/logout", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"] == "/dashboard/login"
+    # Cookie cleared (empty value + Max-Age=0)
+    set_cookie = r.headers.get("set-cookie", "")
+    assert "pathways_dashboard_token=" in set_cookie
+    assert "Max-Age=0" in set_cookie or "max-age=0" in set_cookie.lower()
+
+
+def test_api_endpoints_still_accept_header_auth_only(client):
+    """JSON API endpoints don't need the cookie path; header bearer
+    still works for programmatic clients (curl, partner backends)."""
+    r = client.get(
+        "/dashboard/api/summary",
+        headers={"authorization": "Bearer demo-api-token"},
+    )
+    assert r.status_code == 200
