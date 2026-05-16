@@ -56,6 +56,27 @@ class TestCrisisKeywordCheck:
         assert "systemMessage" in out
         assert out["hookMetadata"]["category"] == "suicide"
 
+    @pytest.mark.parametrize("prompt", [
+        # Regression: the original regex only matched "kill myself" verbatim,
+        # missing the progressive form "killing myself" which is the more
+        # common spoken phrasing. Fix was to add (ing|s|ed)? to the verb.
+        "I am thinking about killing myself.",
+        # Regression: original pattern was don'?t which only matched the
+        # contracted form. Many users on basic phones type the spelled-out
+        # negation. Fix was to add (do\s+not|does\s+not|doesn'?t) alternates.
+        "I do not want to live anymore",
+        # Phrases the keyword list should already cover but weren't tested.
+        "I just want to die",
+        "I wish I was dead",
+        "life is not worth living",
+    ])
+    def test_suicide_additional_phrasings_fire(self, prompt):
+        out = _run_hook(HOOK_CRISIS, {"prompt": prompt})
+        assert out.get("continue") is True, f"Expected crisis on: {prompt!r}"
+        assert out["hookMetadata"]["category"] == "suicide", (
+            f"Expected suicide category on: {prompt!r}, got {out['hookMetadata']}"
+        )
+
     def test_overdose_keyword_fires(self):
         out = _run_hook(HOOK_CRISIS, {"prompt": "I overdosed last night"})
         assert out.get("continue") is True
@@ -74,6 +95,40 @@ class TestCrisisKeywordCheck:
         )
         assert out.get("continue") is True
         assert out["hookMetadata"]["category"] == "housing_emergency"
+
+    @pytest.mark.parametrize("prompt", [
+        # Regression: original pattern was nowhere (safe)? (to go)? tonight,
+        # missing the most common phrasing where users say "nowhere to sleep
+        # tonight." Fix added (sleep|stay|go) alternates.
+        "I have nowhere to sleep tonight",
+        # Regression: sleeping in a car at night is a common reentry crisis
+        # phrasing that the original list missed.
+        "sleeping in my car tonight",
+        # Coverage for the homeless-tonight alternate added in the fix.
+        "I will be homeless tonight",
+        # Existing alternates that should still fire.
+        "sleeping on the street tonight",
+    ])
+    def test_housing_emergency_additional_phrasings_fire(self, prompt):
+        out = _run_hook(HOOK_CRISIS, {"prompt": prompt})
+        assert out.get("continue") is True, f"Expected crisis on: {prompt!r}"
+        assert out["hookMetadata"]["category"] == "housing_emergency", (
+            f"Expected housing_emergency on: {prompt!r}, got {out['hookMetadata']}"
+        )
+
+    def test_third_party_threat_routes_to_violence_not_suicide(self):
+        """'he is going to kill me' is third-party threat, not suicide."""
+        out = _run_hook(HOOK_CRISIS, {"prompt": "he is going to kill me"})
+        assert out.get("continue") is True
+        assert out["hookMetadata"]["category"] == "violence_to_others"
+
+    def test_idiomatic_kill_some_time_does_not_fire(self):
+        """Guard against false positive on benign 'kill some time'."""
+        out = _run_hook(
+            HOOK_CRISIS,
+            {"prompt": "I need to kill some time before my appointment"},
+        )
+        assert out == {}
 
     def test_false_positive_celebration(self):
         """'I killed it on that interview' is not crisis."""

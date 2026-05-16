@@ -48,41 +48,78 @@ from typing import Optional
 
 # Curated keyword list. Each tuple: (compiled regex, category).
 # Categories map to specific resources in the crisis-response Skill.
+#
+# Pattern design rules:
+# 1. Bias toward false positives over false negatives. The crisis-response
+#    Skill includes a graceful-exit script for false positives; a false
+#    negative on a real crisis has no recovery path.
+# 2. Cover progressive forms of verbs (kill / killing / killed) explicitly.
+#    Regex word-boundaries do NOT collapse these for us.
+# 3. Cover both contracted and non-contracted negation (don't / do not).
+#    Many users typing on basic phones write the non-contracted form.
+# 4. Reflexive constructions ("kill myself") gate the suicide category;
+#    third-person constructions ("kill him", "kill me" as victim) belong
+#    in violence_to_others or domestic_violence.
 KEYWORDS = [
     # Suicidality
-    (re.compile(r"\b(kill\s*myself|end\s+(it|my\s+life|things)|suicid(e|al)|"
-                r"don'?t\s+want\s+to\s+(live|be\s+here|wake\s+up)|"
-                r"better\s+off\s+dead|no\s+reason\s+to\s+live)\b", re.I),
-     "suicide"),
+    (re.compile(
+        r"\b("
+        r"kill(ing|s|ed)?\s+(myself|my\s*self)|"
+        r"end(ing)?\s+(it|my\s+life|things|it\s+all)|"
+        r"suicid(e|al)|"
+        r"(don'?t|do\s+not|does\s+not|doesn'?t)\s+want\s+to\s+(live|be\s+here|wake\s+up)|"
+        r"want(ing)?\s+to\s+die|"
+        r"wish\s+(I\s+was|I\s+were|I'?m)\s+dead|"
+        r"better\s+off\s+dead|"
+        r"no\s+reason\s+to\s+(live|be\s+here)|"
+        r"life\s+(is\s+not|isn'?t)\s+worth(\s+living)?"
+        r")\b",
+        re.I), "suicide"),
+
     # Self-harm
-    (re.compile(r"\b(cut(ting)?\s+myself|self[-\s]?harm|hurt\s+myself|"
+    (re.compile(r"\b(cut(ting)?\s+myself|self[-\s]?harm|hurt(ing)?\s+myself|"
                 r"burn(ing)?\s+myself)\b", re.I),
      "self_harm"),
+
     # Overdose / acute substance crisis
     (re.compile(r"\b(overdos(e|ing|ed)|OD'?d|OD'?ing|took\s+too\s+much|"
+                r"going\s+to\s+overdose|"
                 r"can'?t\s+stop\s+using|been\s+using\s+all\s+(day|night)|"
                 r"shooting\s+up\s+again)\b", re.I),
      "substance"),
+
     # Domestic violence in progress
     (re.compile(r"\b(he'?s\s+(hitting|beating|going\s+to\s+kill)|"
                 r"she'?s\s+(hitting|beating|going\s+to\s+kill)|"
                 r"they'?re\s+(hitting|beating|coming\s+for\s+me)|"
                 r"abus(ing|er)\s+me|hide\s+from\s+(him|her|them))\b", re.I),
      "domestic_violence"),
-    # Imminent violence toward others
+
+    # Imminent violence toward others (and toward "me" by a named third party)
     (re.compile(r"\b(going\s+to\s+(kill|hurt|shoot|stab)|"
                 r"want\s+to\s+(kill|hurt)\s+(him|her|them)|"
-                r"have\s+a\s+(gun|knife)\s+and)\b", re.I),
+                r"have\s+a\s+(gun|knife)\s+and|"
+                r"(he|she|they)\s+(is|are|'?s|'?re)\s+going\s+to\s+kill\s+me)\b",
+                re.I),
      "violence_to_others"),
+
     # Sexual violence (recent or in progress)
     (re.compile(r"\b(rap(e|ed|ing)|sexually\s+assault(ed|ing))\b", re.I),
      "sexual_violence"),
+
     # Acute housing emergency with danger
-    (re.compile(r"\b(sleeping\s+on\s+the\s+street\s+tonight|"
-                r"nowhere\s+(?:safe\s+)?(?:to\s+go\s+)?(?:safe\s+)?tonight|"
-                r"no\s+(?:where|place)\s+safe\s+(?:to\s+go|tonight)|"
-                r"freezing\s+(outside|tonight))\b", re.I),
-     "housing_emergency"),
+    # The "tonight" anchor distinguishes acute emergency from generic
+    # housing instability (which routes through housing-pathway, not crisis).
+    (re.compile(
+        r"\b("
+        r"sleeping\s+(on\s+the\s+street|outside|in\s+(my\s+|the\s+)?car)\s+tonight|"
+        r"nowhere\s+(safe\s+)?(to\s+(sleep|stay|go)\s+)?tonight|"
+        r"no(\s+|\s*-?\s*)(where|place)\s+(safe\s+)?(to\s+(sleep|stay|go))?\s*tonight|"
+        r"homeless\s+(tonight|right\s+now)|"
+        r"on\s+the\s+street\s+tonight|"
+        r"freezing\s+(outside|tonight)"
+        r")\b",
+        re.I), "housing_emergency"),
 ]
 
 
