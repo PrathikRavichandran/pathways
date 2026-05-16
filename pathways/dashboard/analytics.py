@@ -232,7 +232,13 @@ class _PostgresStore:
         )
         with self._pool.connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(CREATE_TABLE_SQL)
+                # psycopg's extended protocol (prepared statements) does
+                # not support multi-statement SQL. Run each DDL stmt
+                # separately so CREATE TABLE + CREATE INDEX both land.
+                for stmt in CREATE_TABLE_SQL.split(";"):
+                    stmt = stmt.strip()
+                    if stmt:
+                        cur.execute(stmt)
         return self._pool
 
     def append(self, event: TurnEvent) -> None:

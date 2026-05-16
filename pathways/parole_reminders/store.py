@@ -132,7 +132,12 @@ class _PostgresStore:
         )
         with self._pool.connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(CREATE_TABLE_SQL)
+                # psycopg prepared-statement mode rejects multi-stmt SQL;
+                # run each DDL piece separately.
+                for stmt in CREATE_TABLE_SQL.split(";"):
+                    stmt = stmt.strip()
+                    if stmt:
+                        cur.execute(stmt)
         return self._pool
 
     def upsert(self, reminder: ParoleReminder) -> None:
