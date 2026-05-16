@@ -30,7 +30,6 @@
 html,
 body,
 #root {
-  height: 100%;
   margin: 0;
   -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
@@ -39,6 +38,14 @@ body,
   color: var(--text);
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+html, body, #root {
+  /* Fall back to 100vh on older browsers; dvh tracks the visible viewport
+     so the layout shrinks when the soft keyboard opens instead of pushing
+     content (the bot's last question) above the keyboard. */
+  height: 100vh;
+  height: 100dvh;
 }
 
 /* Smooth scrolling for the chat thread */

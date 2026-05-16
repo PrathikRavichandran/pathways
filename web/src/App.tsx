@@ -93,6 +93,40 @@ export default function App() {
     }
   }, [bubbles, sending]);
 
+  // Scroll the chat to the bottom when the visible viewport resizes (the
+  // soft keyboard opening or closing on mobile triggers this). Keeps the
+  // bot's most recent question pinned just above the composer instead of
+  // hidden behind the keyboard.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const onResize = () => {
+      requestAnimationFrame(() => {
+        if (threadRef.current) {
+          threadRef.current.scrollTo({
+            top: threadRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      });
+    };
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, []);
+
+  // Same scroll when the composer gains focus (covers browsers where the
+  // visualViewport resize event fires too late or not at all on focus).
+  const scrollThreadToBottom = () => {
+    setTimeout(() => {
+      if (threadRef.current) {
+        threadRef.current.scrollTo({
+          top: threadRef.current.scrollHeight,
+          behavior: "smooth",
+        });
+      }
+    }, 250);
+  };
+
   useEffect(() => {
     localStorage.setItem("pathways.lang", lang);
     document.documentElement.lang = lang;
@@ -236,6 +270,7 @@ export default function App() {
           onChange={setInput}
           onSend={onSend}
           onKeyDown={onKeyDown}
+          onFocus={scrollThreadToBottom}
           disabled={!sessionId || sending}
           sending={sending}
           lang={lang}
@@ -280,7 +315,7 @@ function WelcomeScreen({
           {...fadeIn(0)}
           className="mt-4 mb-6 rounded-3xl bg-cream-50/60 p-3 shadow-soft dark:bg-ink-800/40"
         >
-          <LogoMark size={88} withGlow />
+          <LogoMark size={120} withGlow />
         </motion.div>
         <motion.p
           {...fadeIn(0.05)}
@@ -402,13 +437,14 @@ type ComposerProps = {
   onChange: (v: string) => void;
   onSend: () => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onFocus?: () => void;
   disabled: boolean;
   sending: boolean;
   lang: Lang;
 };
 
 const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Composer(
-  { value, onChange, onSend, onKeyDown, disabled, sending, lang },
+  { value, onChange, onSend, onKeyDown, onFocus, disabled, sending, lang },
   ref,
 ) {
   return (
@@ -420,6 +456,7 @@ const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Compose
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={onKeyDown}
+            onFocus={onFocus}
             placeholder={t("input_placeholder", lang)}
             rows={1}
             disabled={disabled}
@@ -512,30 +549,111 @@ function Header({
       <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2.5">
           <span className="text-forest-600 dark:text-forest-300">
-            <LogoMarkOnSurface size={32} />
+            <LogoMarkOnSurface size={40} />
           </span>
           <Wordmark className="text-ink-700 dark:text-cream-100" />
         </div>
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={onToggleLang}
-            aria-label="Toggle language"
-            className="rounded-full border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-forest-400 hover:text-forest-700 dark:border-ink-700 dark:text-cream-200 dark:hover:border-forest-400 dark:hover:text-forest-300"
-          >
-            {lang === "en" ? "ES" : "EN"}
-          </button>
-          {showReset && (
-            <button
-              onClick={onReset}
-              aria-label={t("reset", lang)}
-              className="rounded-full border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-forest-400 hover:text-forest-700 dark:border-ink-700 dark:text-cream-200 dark:hover:border-forest-400 dark:hover:text-forest-300"
-            >
-              {t("reset", lang)}
-            </button>
-          )}
+        <div className="flex items-center gap-2">
+          <LangToggle lang={lang} onToggle={onToggleLang} />
+          <AnimatePresence initial={false}>
+            {showReset && <NewChatButton lang={lang} onClick={onReset} />}
+          </AnimatePresence>
         </div>
       </div>
     </header>
+  );
+}
+
+function LangToggle({
+  lang,
+  onToggle,
+}: {
+  lang: Lang;
+  onToggle: () => void;
+}) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.button
+      onClick={onToggle}
+      aria-label="Toggle language"
+      whileHover={reduce ? undefined : { scale: 1.06 }}
+      whileTap={reduce ? undefined : { scale: 0.94 }}
+      transition={{ type: "spring", stiffness: 400, damping: 22 }}
+      className="relative inline-flex h-8 w-[68px] items-center rounded-full border border-cream-300 bg-cream-50/80 px-1 text-[11px] font-semibold uppercase tracking-wider text-ink-600 shadow-soft transition hover:border-forest-400 hover:text-forest-700 dark:border-ink-700 dark:bg-ink-800/60 dark:text-cream-200 dark:hover:border-forest-400 dark:hover:text-forest-300"
+    >
+      {/* Sliding pill indicator */}
+      <motion.span
+        layout
+        transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 32 }}
+        className={
+          "absolute top-1 bottom-1 w-[30px] rounded-full bg-forest-600 dark:bg-forest-500 " +
+          (lang === "en" ? "left-1" : "left-[35px]")
+        }
+      />
+      <span
+        className={
+          "relative z-10 flex-1 text-center transition-colors " +
+          (lang === "en" ? "text-cream-50" : "")
+        }
+      >
+        EN
+      </span>
+      <span
+        className={
+          "relative z-10 flex-1 text-center transition-colors " +
+          (lang === "es" ? "text-cream-50" : "")
+        }
+      >
+        ES
+      </span>
+    </motion.button>
+  );
+}
+
+function NewChatButton({
+  lang,
+  onClick,
+}: {
+  lang: Lang;
+  onClick: () => void;
+}) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.button
+      onClick={onClick}
+      aria-label={t("reset", lang)}
+      initial={reduce ? false : { opacity: 0, x: 8, scale: 0.9 }}
+      animate={reduce ? false : { opacity: 1, x: 0, scale: 1 }}
+      exit={reduce ? undefined : { opacity: 0, x: 8, scale: 0.9 }}
+      whileHover={reduce ? undefined : { scale: 1.04, y: -1 }}
+      whileTap={reduce ? undefined : { scale: 0.94 }}
+      transition={{ type: "spring", stiffness: 400, damping: 22 }}
+      className="group inline-flex h-8 items-center gap-1.5 rounded-full border border-cream-300 bg-cream-50/80 px-3 text-[11px] font-semibold uppercase tracking-wider text-ink-600 shadow-soft transition hover:border-forest-400 hover:bg-cream-50 hover:text-forest-700 dark:border-ink-700 dark:bg-ink-800/60 dark:text-cream-200 dark:hover:border-forest-400 dark:hover:text-forest-300"
+    >
+      <motion.span
+        aria-hidden
+        animate={reduce ? undefined : { rotate: [0, 0] }}
+        whileHover={reduce ? undefined : { rotate: 90 }}
+        transition={{ type: "spring", stiffness: 220, damping: 14 }}
+        className="inline-flex"
+      >
+        <ComposeIcon />
+      </motion.span>
+      {t("reset", lang)}
+    </motion.button>
+  );
+}
+
+function ComposeIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 5v14M5 12h14"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
