@@ -352,5 +352,9 @@ def test_admin_run_parole_reminders_with_valid_token(monkeypatch):
     )
     assert r.status_code == 200
     body = r.json()
-    assert "target_date" in body
-    assert "sent" in body
+    # Phase 6 final ship: admin endpoint drains BOTH parole reminders
+    # and the writeback queue, returns a dict keyed by source.
+    assert "parole_reminders" in body
+    assert "writeback" in body
+    assert "target_date" in body["parole_reminders"]
+    assert "sent" in body["parole_reminders"]

@@ -106,10 +106,10 @@ api.include_router(dashboard_router)
 def health() -> dict:
     return {
         "status": "ok",
-        "version": "0.5.0",
+        "version": "0.6.0",
         "checkpoint_backend": os.environ.get("PATHWAYS_CHECKPOINT_BACKEND", "memory"),
         "channels": ["sms", "web"],
-        "modules": ["dashboard", "parole_reminders"],
+        "modules": ["dashboard", "parole_reminders", "writeback"],
     }
 
 
@@ -140,9 +140,15 @@ def run_parole_reminders(request: Request) -> dict:
             content={"detail": "invalid or missing admin token"},
             headers={"WWW-Authenticate": "Bearer"},
         )
+    from pathways.dashboard.writeback import drain_pending
     from pathways.parole_reminders.service import run_send_loop
-    summary = run_send_loop()
-    return summary
+
+    parole_summary = run_send_loop()
+    writeback_summary = drain_pending()
+    return {
+        "parole_reminders": parole_summary,
+        "writeback": writeback_summary,
+    }
 
 
 # ---------------------------------------------------------------------------

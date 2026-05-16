@@ -17,11 +17,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, Field
 
-from pathways.dashboard import analytics
+from pathways.dashboard import analytics, writeback
 from pathways.dashboard.auth import Partner, authenticate
 
 _TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
@@ -130,3 +131,79 @@ def api_recent(
             scope=partner.scope, limit=limit, days=days,
         ),
     })
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 #3 - anonymous monthly trend reports (Markdown export)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/report.md", response_class=PlainTextResponse)
+def api_report_markdown(
+    partner: Partner = Depends(authenticate),
+    days: int = Query(30, ge=1, le=365),
+) -> PlainTextResponse:
+    """Anonymized Markdown report partners can paste into newsletters
+    or email to their board. Same data the landing page renders, in a
+    format that survives without the web UI."""
+    md = analytics.render_markdown_report(
+        partner_name=partner.name, scope=partner.scope, days=days,
+    )
+    return PlainTextResponse(
+        md, media_type="text/markdown; charset=utf-8",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 #5 - NGO write-back (caseworker -> user SMS relay)
+# ---------------------------------------------------------------------------
+
+
+class WritebackRequest(BaseModel):
+    thread_id: str = Field(
+        description="Display thread id from the dashboard's recent table",
+        min_length=4, max_length=128,
+    )
+    message: str = Field(
+        description="Plain-text SMS body to relay to the user",
+        min_length=1, max_length=1000,
+    )
+
+
+class WritebackResponse(BaseModel):
+    queued_id: int
+    thread_id: str
+    partner: str
+    note: str
+
+
+@router.post("/api/writeback", response_model=WritebackResponse)
+def api_writeback(
+    req: WritebackRequest,
+    partner: Partner = Depends(authenticate),
+) -> WritebackResponse:
+    """Queue an SMS to a user. The caseworker never sees the phone
+    number; Pathways resolves thread_id -> phone at send time via the
+    forward map (operator-wired). The message is queued in
+    `relay_messages` and drained by the same daily cron that handles
+    parole reminders."""
+    if not req.thread_id or not req.message.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="thread_id and message are required",
+        )
+    queued_id = writeback.enqueue_message(
+        thread_id=req.thread_id,
+        body=req.message.strip(),
+        partner_name=partner.name,
+    )
+    return WritebackResponse(
+        queued_id=queued_id,
+        thread_id=req.thread_id,
+        partner=partner.name,
+        note=(
+            "Message queued. Delivery requires the forward phone map "
+            "to be wired on the operator side; until then the message "
+            "sits in relay_messages.pending."
+        ),
+    )
