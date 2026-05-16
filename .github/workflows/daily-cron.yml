@@ -1,0 +1,51 @@
+name: Daily outbound cron
+
+# Hits the HF Space admin endpoint once a day to drain both outbound
+# queues (parole reminders + NGO write-back). The endpoint is Bearer-
+# authenticated; the token lives in repo secret PATHWAYS_ADMIN_TOKEN.
+# The endpoint also lives in the HF Space env as PATHWAYS_ADMIN_TOKEN
+# so the server-side compare matches.
+#
+# Set the secret once:
+#   gh secret set PATHWAYS_ADMIN_TOKEN -b "$(openssl rand -hex 32)"
+# and paste the same value into the HF Space's Settings -> Variables and Secrets.
+
+on:
+  schedule:
+    # 14:00 UTC = 08:00 America/Chicago (during CST). Parole check-ins
+    # almost always happen during business hours, so a same-morning
+    # reminder for the next-day check-in is the right shape.
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drain-outbound-queues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST /admin/run-parole-reminders
+        env:
+          ADMIN_TOKEN: ${{ secrets.PATHWAYS_ADMIN_TOKEN }}
+          SPACE_URL: ${{ vars.PATHWAYS_SPACE_URL || 'https://prathik10-pathways.hf.space' }}
+        run: |
+          if [ -z "$ADMIN_TOKEN" ]; then
+            echo "::error::PATHWAYS_ADMIN_TOKEN secret is not set on this repo."
+            echo "Set it with: gh secret set PATHWAYS_ADMIN_TOKEN"
+            exit 1
+          fi
+          echo "Hitting $SPACE_URL/admin/run-parole-reminders ..."
+          response=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" \
+            -X POST "$SPACE_URL/admin/run-parole-reminders" \
+            -H "Authorization: Bearer $ADMIN_TOKEN" \
+            -H "Content-Type: application/json")
+          body=$(echo "$response" | sed -e 's/HTTP_STATUS\:.*//g')
+          status=$(echo "$response" | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
+          echo "HTTP $status"
+          echo "Body:"
+          echo "$body" | python -m json.tool 2>/dev/null || echo "$body"
+          if [ "$status" != "200" ]; then
+            echo "::error::admin endpoint returned non-200"
+            exit 1
+          fi

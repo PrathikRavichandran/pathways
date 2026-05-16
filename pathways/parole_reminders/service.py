@@ -222,14 +222,19 @@ def record_reminder_if_opt_in(
 
 
 def _resolve_phone(thread_id: str) -> Optional[str]:
-    """Map a salted thread_id back to its source phone for outbound send.
+    """Resolve thread_id -> phone via the forward map.
 
-    Production wires this to a small thread_id -> phone table maintained
-    alongside the checkpointer (the salted hash is one-way, so we need a
-    forward map). The MVP returns None; the send loop logs a no-phone
-    skip in that case. Operator wires this when running in prod.
+    The forward map is `pathways.sessions.phone_map`. When
+    PATHWAYS_PHONE_ENCRYPTION_KEY is set on the deploy AND the SMS path
+    has seen this thread before, this returns the phone the user
+    originally texted from. Otherwise None, and the send loop counts a
+    skipped_no_phone.
     """
-    return None
+    try:
+        from pathways.sessions.phone_map import resolve
+        return resolve(thread_id)
+    except Exception:
+        return None
 
 
 def _send_message_body(reminder: ParoleReminder, language: str = "en") -> str:

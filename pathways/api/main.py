@@ -260,6 +260,13 @@ async def sms_inbound(
         thread_id = thread_id_for_web(MessageSid or str(uuid.uuid4()))
     else:
         thread_id = thread_id_for_phone(From)
+        # Phase 6 wire: persist the forward thread_id -> phone mapping so
+        # parole reminders and NGO write-back can resolve back to a
+        # phone at send time. The map is encrypted at rest via Fernet
+        # (PATHWAYS_PHONE_ENCRYPTION_KEY); without that key, the map
+        # falls back to in-memory and outbound queues skip with a warn.
+        from pathways.sessions.phone_map import set_phone
+        set_phone(thread_id, From)
 
     # 3. Compliance keywords: handle STOP / START / HELP at the ingress,
     #    NOT inside the graph (TCPA requires deterministic processing).
