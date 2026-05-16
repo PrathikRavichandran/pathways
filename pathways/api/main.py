@@ -106,11 +106,43 @@ api.include_router(dashboard_router)
 def health() -> dict:
     return {
         "status": "ok",
-        "version": "0.4.0",
+        "version": "0.5.0",
         "checkpoint_backend": os.environ.get("PATHWAYS_CHECKPOINT_BACKEND", "memory"),
         "channels": ["sms", "web"],
-        "modules": ["dashboard"],
+        "modules": ["dashboard", "parole_reminders"],
     }
+
+
+# ---------------------------------------------------------------------------
+# Admin: parole reminder daily send loop
+# ---------------------------------------------------------------------------
+
+
+@api.post("/admin/run-parole-reminders")
+def run_parole_reminders(request: Request) -> dict:
+    """Daily cron entry point. Scans the parole_reminders store for
+    rows due tomorrow and sends an SMS via the Twilio outbound wrapper.
+
+    Authentication: shared secret in PATHWAYS_ADMIN_TOKEN, presented as
+    `Authorization: Bearer <token>`. Constant-time comparison.
+
+    External scheduler: GitHub Actions (or any free cron service) hits
+    this once a day. HF Spaces does not run background workers cleanly,
+    so an external trigger is the right shape.
+    """
+    import hmac as _hmac
+    expected = os.environ.get("PATHWAYS_ADMIN_TOKEN", "")
+    header = request.headers.get("authorization") or ""
+    presented = header[len("bearer "):].strip() if header.lower().startswith("bearer ") else ""
+    if not expected or not presented or not _hmac.compare_digest(expected, presented):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "invalid or missing admin token"},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    from pathways.parole_reminders.service import run_send_loop
+    summary = run_send_loop()
+    return summary
 
 
 # ---------------------------------------------------------------------------

@@ -100,6 +100,7 @@ def run(state: PathwaysState) -> dict[str, Any]:
         # but never re-prompt for slots.
         extracted = _extract(state)
         profile = _merge_into_profile(state.intake, extracted, state)
+        profile = _apply_parole_reminder_capture(profile, state)
         return {
             "intake": profile,
             "intake_stage": IntakeStage.DONE,
@@ -110,6 +111,7 @@ def run(state: PathwaysState) -> dict[str, Any]:
     # Run extraction. The merged profile carries forward what we already had.
     extracted = _extract(state)
     profile = _merge_into_profile(state.intake, extracted, state)
+    profile = _apply_parole_reminder_capture(profile, state)
 
     # Decide what to do next based on which required slot is still missing.
     missing = next_missing_slot(profile)
@@ -385,3 +387,42 @@ def _merge_into_profile(
         profile.prison_facility = str(extracted["prison_facility"]).strip()
 
     return profile
+
+
+def _apply_parole_reminder_capture(
+    profile: IntakeProfile, state: PathwaysState,
+) -> IntakeProfile:
+    """If the draft node offered a parole reminder on a previous turn,
+    check this turn's reply for a yes/no + date and persist accordingly.
+
+    Mutates a copy of the profile, never the caller's instance.
+    """
+    if not profile.parole_reminder_offered:
+        return profile
+    if profile.parole_reminder_opt_in is not None:
+        # Already captured; do nothing further.
+        return profile
+    supervision = profile.supervision_status
+    val = supervision.value if hasattr(supervision, "value") else str(supervision)
+    if val != "parole":
+        return profile
+
+    try:
+        from pathways.parole_reminders.service import record_reminder_if_opt_in
+    except Exception:
+        return profile
+
+    outcome = record_reminder_if_opt_in(
+        thread_id=state.session_id,
+        user_message=state.user_message or "",
+        intake_supervision_is_parole=True,
+        reminder_was_offered=True,
+    )
+    if outcome is None:
+        return profile
+
+    accepted, parsed_date = outcome
+    return profile.model_copy(update={
+        "parole_reminder_opt_in": accepted,
+        "parole_check_in_date": parsed_date if accepted else None,
+    })

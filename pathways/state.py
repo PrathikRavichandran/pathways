@@ -23,7 +23,7 @@ Design notes
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Literal, Optional
 
@@ -116,6 +116,14 @@ class IntakeProfile(BaseModel):
     time_since_release_days: Optional[int] = None
     veteran: Optional[bool] = None
     language: Literal["en", "es"] = "en"
+
+    # Phase 6: parole-reporting reminder. When supervision_status is parole
+    # we offer to text the user the day before each check-in (highest
+    # claimed impact on technical-violation recidivism per the literature).
+    # Opt-in is explicit, never inferred.
+    parole_reminder_opt_in: Optional[bool] = None
+    parole_check_in_date: Optional[date] = None
+    parole_reminder_offered: bool = False  # so we don't re-offer every turn
 
 
 class Retrieval(BaseModel):

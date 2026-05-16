@@ -62,7 +62,45 @@ def run(state: PathwaysState) -> dict[str, Any]:
     except Exception:
         draft = _template_draft(state)
 
-    return {"draft_response": draft, "next_node": "audit"}
+    # Phase 6: parole reminder opt-in offer. Append a one-line offer
+    # when the user is on parole and we have not yet offered. The
+    # auditor sees the appended text and clears it (no legal claim,
+    # no outcome promise; it's an operational opt-in question).
+    extra: dict[str, Any] = {}
+    if _should_offer_parole_reminder(state):
+        draft = _append_parole_offer(draft, language=state.intake.language or "en")
+        updated_intake = state.intake.model_copy(
+            update={"parole_reminder_offered": True}
+        )
+        extra["intake"] = updated_intake
+
+    return {"draft_response": draft, "next_node": "audit", **extra}
+
+
+def _should_offer_parole_reminder(state: PathwaysState) -> bool:
+    intake = state.intake
+    if intake.parole_reminder_offered:
+        return False
+    if intake.parole_reminder_opt_in is not None:
+        return False
+    supervision = intake.supervision_status
+    val = supervision.value if hasattr(supervision, "value") else str(supervision)
+    return val == "parole"
+
+
+def _append_parole_offer(draft: str, language: str) -> str:
+    if language == "es":
+        offer = (
+            "\n\nUna ultima cosa: si quieres, te puedo enviar un mensaje el dia "
+            "antes de cada cita de libertad condicional. Responde SI con la fecha "
+            "(por ejemplo, SI marzo 5)."
+        )
+    else:
+        offer = (
+            "\n\nOne more thing: if you want, I can text you the day before each "
+            "parole check-in. Reply YES with the date (e.g., YES March 5)."
+        )
+    return (draft or "").rstrip() + offer
 
 
 def _llm_draft(state: PathwaysState) -> str:
