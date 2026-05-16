@@ -49,3 +49,15 @@ jobs:
             echo "::error::admin endpoint returned non-200"
             exit 1
           fi
+
+      - name: POST /admin/purge-audit-log (retention)
+        env:
+          ADMIN_TOKEN: ${{ secrets.PATHWAYS_ADMIN_TOKEN }}
+          SPACE_URL: ${{ vars.PATHWAYS_SPACE_URL || 'https://prathik10-pathways.hf.space' }}
+          RETENTION_DAYS: ${{ vars.PATHWAYS_AUDIT_RETENTION_DAYS || '180' }}
+        run: |
+          echo "Purging audit log entries older than $RETENTION_DAYS days ..."
+          curl -sS -X POST \
+            "$SPACE_URL/admin/purge-audit-log?older_than_days=$RETENTION_DAYS" \
+            -H "Authorization: Bearer $ADMIN_TOKEN" \
+            -H "Content-Type: application/json" | python -m json.tool 2>/dev/null || true

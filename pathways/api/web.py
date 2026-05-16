@@ -36,6 +36,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from pathways.audit import service as audit_service
 from pathways.dashboard import analytics as dashboard_analytics
 from pathways.graph import get_app
 from pathways.sessions import (
@@ -257,10 +258,10 @@ def _invoke_graph(
 
     # Caseworker dashboard analytics. Never raises (record_turn swallows
     # its own exceptions); analytics must not affect the user response path.
+    reply_text = ""
+    if isinstance(final, dict):
+        reply_text = str(final.get("final_response") or "")
     try:
-        reply_text = ""
-        if isinstance(final, dict):
-            reply_text = str(final.get("final_response") or "")
         event = dashboard_analytics.event_from_state(
             final_state=final,
             thread_id=thread_id,
@@ -272,6 +273,25 @@ def _invoke_graph(
         dashboard_analytics.record_turn(event)
     except Exception:
         logger.exception("dashboard analytics write failed (non-fatal)")
+
+    # Audit log: operator-side full-content record. Same contract.
+    try:
+        crisis_cat = (
+            crisis.category.value if crisis.category and hasattr(crisis.category, "value")
+            else (str(crisis.category) if crisis.category else None)
+        )
+        audit_event = audit_service.event_from_state(
+            final_state=final,
+            thread_id=thread_id,
+            channel="web",
+            user_message=user_message,
+            reply=reply_text,
+            crisis_fired=bool(crisis.fired),
+            crisis_category=crisis_cat,
+        )
+        audit_service.record_turn(audit_event)
+    except Exception:
+        logger.exception("audit write failed (non-fatal)")
 
     if hasattr(final, "model_dump"):
         return final.model_dump(mode="json")

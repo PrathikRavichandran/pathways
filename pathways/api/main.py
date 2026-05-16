@@ -37,6 +37,7 @@ from pydantic import BaseModel
 
 from pathways.api.twilio_signature import verify_twilio_signature
 from pathways.api.web import router as web_router
+from pathways.audit import service as audit_service
 from pathways.dashboard import analytics as dashboard_analytics
 from pathways.dashboard.app import router as dashboard_router
 from pathways.graph import get_app
@@ -106,10 +107,10 @@ api.include_router(dashboard_router)
 def health() -> dict:
     return {
         "status": "ok",
-        "version": "0.6.0",
+        "version": "0.7.0",
         "checkpoint_backend": os.environ.get("PATHWAYS_CHECKPOINT_BACKEND", "memory"),
         "channels": ["sms", "web"],
-        "modules": ["dashboard", "parole_reminders", "writeback"],
+        "modules": ["dashboard", "parole_reminders", "writeback", "audit"],
     }
 
 
@@ -130,11 +131,7 @@ def run_parole_reminders(request: Request) -> dict:
     this once a day. HF Spaces does not run background workers cleanly,
     so an external trigger is the right shape.
     """
-    import hmac as _hmac
-    expected = os.environ.get("PATHWAYS_ADMIN_TOKEN", "")
-    header = request.headers.get("authorization") or ""
-    presented = header[len("bearer "):].strip() if header.lower().startswith("bearer ") else ""
-    if not expected or not presented or not _hmac.compare_digest(expected, presented):
+    if not _verify_admin_token(request):
         return JSONResponse(
             status_code=401,
             content={"detail": "invalid or missing admin token"},
@@ -149,6 +146,106 @@ def run_parole_reminders(request: Request) -> dict:
         "parole_reminders": parole_summary,
         "writeback": writeback_summary,
     }
+
+
+def _verify_admin_token(request: Request) -> bool:
+    """Constant-time check of PATHWAYS_ADMIN_TOKEN against the Bearer."""
+    import hmac as _hmac
+    expected = os.environ.get("PATHWAYS_ADMIN_TOKEN", "")
+    header = request.headers.get("authorization") or ""
+    presented = (
+        header[len("bearer "):].strip()
+        if header.lower().startswith("bearer ") else ""
+    )
+    return bool(
+        expected and presented and _hmac.compare_digest(expected, presented)
+    )
+
+
+@api.get("/admin/audit-log")
+def admin_audit_log(
+    request: Request,
+    thread_id: Optional[str] = None,
+    days: int = 7,
+    limit: int = 100,
+) -> JSONResponse:
+    """Operator-side full-content audit log query. Bearer-auth via
+    PATHWAYS_ADMIN_TOKEN (same token as the daily cron).
+
+    Query params:
+      thread_id  filter to a single thread (the salted hash, not a phone)
+      days       look back N days (default 7)
+      limit      max rows to return (default 100, max 500)
+    """
+    if not _verify_admin_token(request):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "invalid or missing admin token"},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    from datetime import datetime, timedelta, timezone
+    from pathways.audit import get_store
+
+    limit = max(1, min(limit, 500))
+    since = datetime.now(timezone.utc) - timedelta(days=max(1, days))
+    rows = get_store().query(thread_id=thread_id, since=since, limit=limit)
+    return JSONResponse({
+        "count": len(rows),
+        "thread_id": thread_id,
+        "since": since.isoformat(),
+        "limit": limit,
+        "rows": [
+            {
+                "thread_id": r.thread_id,
+                "ts": r.ts.isoformat() if hasattr(r.ts, "isoformat") else str(r.ts),
+                "channel": r.channel,
+                "user_message": r.user_message,
+                "reply": r.reply,
+                "needs": r.needs,
+                "language": r.language,
+                "region": r.region,
+                "county": r.county,
+                "workforce_region": r.workforce_region,
+                "zipcode": r.zipcode,
+                "supervision_status": r.supervision_status,
+                "intake_complete": r.intake_complete,
+                "intake_stage": r.intake_stage,
+                "retrievals": r.retrievals,
+                "matched_resources": r.matched_resources,
+                "audit_verdict": r.audit_verdict,
+                "audit_issues": r.audit_issues,
+                "escalated": r.escalated,
+                "escalation_reason": r.escalation_reason,
+                "crisis_fired": r.crisis_fired,
+                "crisis_category": r.crisis_category,
+            }
+            for r in rows
+        ],
+    })
+
+
+@api.post("/admin/purge-audit-log")
+def admin_purge_audit_log(
+    request: Request,
+    older_than_days: int = 180,
+) -> JSONResponse:
+    """Retention purge. Hit by the daily cron alongside the outbound
+    queues. Default retention is 180 days; override via the query param."""
+    if not _verify_admin_token(request):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "invalid or missing admin token"},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    from datetime import datetime, timedelta, timezone
+    from pathways.audit import get_store
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=max(1, older_than_days))
+    removed = get_store().purge_older_than(cutoff)
+    return JSONResponse({
+        "cutoff": cutoff.isoformat(),
+        "removed": removed,
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -428,6 +525,27 @@ async def _invoke_graph(
             dashboard_analytics.record_turn(event)
     except Exception:
         logger.exception("dashboard analytics write failed (non-fatal)")
+
+    # Audit log: full-content operator-side record. Distinct from the
+    # PII-scrubbed dashboard analytics. Same never-raises contract.
+    try:
+        if final is not None:
+            crisis_cat = (
+                crisis.category.value if crisis.category and hasattr(crisis.category, "value")
+                else (str(crisis.category) if crisis.category else None)
+            )
+            audit_event = audit_service.event_from_state(
+                final_state=final,
+                thread_id=thread_id,
+                channel=channel,
+                user_message=user_message,
+                reply=reply,
+                crisis_fired=bool(crisis.fired),
+                crisis_category=crisis_cat,
+            )
+            audit_service.record_turn(audit_event)
+    except Exception:
+        logger.exception("audit write failed (non-fatal)")
 
     return reply
 
