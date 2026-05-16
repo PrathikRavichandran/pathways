@@ -1,0 +1,127 @@
+[
+  {
+    "id": "retrieval-expunction-paraphrase-en",
+    "category": "retrieval_quality",
+    "input": {
+      "message": "I want to clear my record so jobs stop asking about it",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "77002",
+        "intake_complete": true,
+        "top_need": "record_clearing"
+      }
+    },
+    "expects": {
+      "needs_contains": ["record_clearing"]
+    },
+    "expects_full_mode": {
+      "retrieval_ids_contains_any_of": [
+        "tx-ccp-55-01", "tx-gv-411-072", "tx-gv-411-0735"
+      ]
+    },
+    "notes": "Paraphrase: no keyword overlap with 'expunction' or 'non-disclosure'. Hybrid retrieval should win this; BM25 may miss. Lives in expects_full_mode so the BM25-default CI stays green."
+  },
+  {
+    "id": "retrieval-snap-paraphrase-en",
+    "category": "retrieval_quality",
+    "input": {
+      "message": "I had a drug case in 2018, can I get food help in Texas",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "75201",
+        "intake_complete": true,
+        "top_need": "benefits"
+      }
+    },
+    "expects": {
+      "needs_contains": ["benefits"]
+    },
+    "expects_full_mode": {
+      "retrieval_ids_contains_any_of": [
+        "usc-7-2015-h", "tx-hhsc-snap-eligibility", "tx-hr-31-0325"
+      ]
+    },
+    "notes": "TX has opted out of the federal SNAP drug-felony ban (with conditions). The corpus has the exact citations; hybrid retrieval should surface at least one."
+  },
+  {
+    "id": "retrieval-public-housing-paraphrase-en",
+    "category": "retrieval_quality",
+    "input": {
+      "message": "Can I live in section 8 with a felony on my record",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "77002",
+        "intake_complete": true,
+        "top_need": "housing"
+      }
+    },
+    "expects": {
+      "needs_contains": ["housing"]
+    },
+    "expects_full_mode": {
+      "retrieval_ids_contains_any_of": [
+        "hud-pih-2015-19", "hud-mandatory-denials-pha"
+      ]
+    },
+    "notes": "Most users say 'section 8', not '24 CFR 960.204'. Hybrid retrieval should bridge; lives in expects_full_mode so BM25-default CI stays green."
+  },
+  {
+    "id": "retrieval-occupational-license-paraphrase-en",
+    "category": "retrieval_quality",
+    "input": {
+      "message": "I want to become a barber, will my record stop me",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "78201",
+        "intake_complete": true,
+        "top_need": "employment"
+      }
+    },
+    "expects": {
+      "needs_contains": ["employment"]
+    },
+    "expects_full_mode": {
+      "retrieval_ids_contains_any_of": ["tx-occ-53-021"]
+    },
+    "notes": "Tex. Occ. Code Ch. 53 governs criminal history in occupational licensing. Paraphrase test."
+  },
+  {
+    "id": "retrieval-niccc-cite-en",
+    "category": "retrieval_quality",
+    "input": {
+      "message": "What jobs am I banned from with my Texas conviction",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "77002",
+        "intake_complete": true,
+        "top_need": "employment"
+      }
+    },
+    "expects": {
+      "needs_contains": ["employment"]
+    },
+    "expects_full_mode": {
+      "retrieval_ids_contains_any_of": [
+        "tx-occ-53-021", "tx-occ-108-subB"
+      ]
+    },
+    "notes": "Same domain, different phrasing. At least one occupational licensing entry should appear."
+  },
+  {
+    "id": "retrieval-cap-on-resources-still-fires",
+    "category": "retrieval_quality",
+    "input": {
+      "message": "Need help with everything",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "77002",
+        "intake_complete": true,
+        "top_need": "housing"
+      }
+    },
+    "expects": {
+      "resources_min_count": 1
+    },
+    "notes": "Catch-all message: at minimum the 211-texas safety net always shows up."
+  }
+]

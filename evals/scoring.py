@@ -122,6 +122,47 @@ def check_resource_id_contains_any_of(actual: dict, ids: list[str]) -> bool:
     return False
 
 
+def check_retrieval_ids_contains_any_of(actual: dict, ids: list[str]) -> bool:
+    """At least one of the expected corpus ids is in the top retrieval
+    results. Useful for measuring BM25 vs hybrid: a paraphrase query
+    should still surface the canonical corpus entry."""
+    if not ids:
+        return True
+    retrieved = {str(x) for x in (actual.get("retrieval_ids") or [])}
+    return any(i in retrieved for i in ids)
+
+
+def check_audit_verdict_in(actual: dict, allowed: list[str]) -> bool:
+    """The audit node's verdict is one of the allowed values."""
+    if not allowed:
+        return True
+    verdict = actual.get("audit_verdict")
+    if verdict is None:
+        # No audit ran (graph short-circuited). Don't fail if "none" is
+        # explicitly allowed.
+        return "none" in [a.lower() for a in allowed]
+    return str(verdict).lower() in [a.lower() for a in allowed]
+
+
+def check_parole_offer_present(actual: dict, expected: bool) -> bool:
+    """Reply contains the parole reminder offer (EN or ES sentence)."""
+    text = _reply_text(actual)
+    has_offer = ("reply yes" in text) or ("responde si" in text)
+    return has_offer == bool(expected)
+
+
+def check_parole_opt_in_is(actual: dict, expected) -> bool:
+    """parole_reminder_opt_in on the projected state. None/True/False."""
+    return actual.get("parole_reminder_opt_in") == expected
+
+
+def check_parole_date_iso_is(actual: dict, expected: str) -> bool:
+    val = actual.get("parole_check_in_date")
+    if val is None:
+        return expected in (None, "")
+    return str(val) == expected
+
+
 # Mapping from expectation key to scorer fn. Adding a new check is one line.
 SCORERS = {
     "needs_contains": check_needs_contains,
@@ -137,6 +178,11 @@ SCORERS = {
     "reply_does_not_contain_any_of": check_reply_does_not_contain_any_of,
     "resources_min_count": check_resources_min_count,
     "resource_id_contains_any_of": check_resource_id_contains_any_of,
+    "retrieval_ids_contains_any_of": check_retrieval_ids_contains_any_of,
+    "audit_verdict_in": check_audit_verdict_in,
+    "parole_offer_present": check_parole_offer_present,
+    "parole_opt_in_is": check_parole_opt_in_is,
+    "parole_date_iso_is": check_parole_date_iso_is,
 }
 
 

@@ -178,6 +178,27 @@ def _invoke(scenario: Scenario) -> dict:
             if sn and sn != "unknown" and sn not in needs:
                 needs.append(sn)
 
+    # Retrieval projection: ids of corpus entries in the first retrieval's
+    # results. Lets a scenario assert that a specific entry made it into
+    # the top-k (useful for measuring BM25 vs hybrid via the eval).
+    retrievals = final.get("retrievals") or []
+    retrieval_ids: list[str] = []
+    if retrievals:
+        first = retrievals[0]
+        if hasattr(first, "model_dump"):
+            first = first.model_dump(mode="json")
+        if isinstance(first, dict):
+            for hit in first.get("results") or []:
+                hid = hit.get("id") if isinstance(hit, dict) else None
+                if hid:
+                    retrieval_ids.append(str(hid))
+
+    # Audit verdict projection
+    audit = final.get("audit")
+    if hasattr(audit, "model_dump"):
+        audit = audit.model_dump(mode="json")
+    audit_verdict = audit.get("verdict") if isinstance(audit, dict) else None
+
     return {
         "reply": final.get("final_response", ""),
         "language": (intake.get("language") if isinstance(intake, dict) else None) or "en",
@@ -186,6 +207,11 @@ def _invoke(scenario: Scenario) -> dict:
         "escalated": bool(final.get("escalation_reason")),
         "crisis_fired": bool(crisis.fired),
         "resources": final.get("matched_resources") or [],
+        "retrieval_ids": retrieval_ids,
+        "audit_verdict": audit_verdict,
+        "parole_reminder_offered": (intake.get("parole_reminder_offered") if isinstance(intake, dict) else None),
+        "parole_reminder_opt_in": (intake.get("parole_reminder_opt_in") if isinstance(intake, dict) else None),
+        "parole_check_in_date": (intake.get("parole_check_in_date") if isinstance(intake, dict) else None),
     }
 
 

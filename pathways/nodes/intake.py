@@ -185,6 +185,8 @@ def _heuristic_extract(user_message: str) -> dict:
             # English
             "shelter", "place to stay", "nowhere to live", "homeless",
             "housing", "place to sleep", "bed for the night", "roof",
+            "section 8", "public housing", "subsidized housing", "pha",
+            "live in section 8",
             # Spanish
             "vivienda", "techo", "albergue", "donde dormir", "donde quedarme",
             "sin casa", "en la calle",

@@ -1,0 +1,96 @@
+[
+  {
+    "id": "parole-offer-appears-en",
+    "category": "parole_reminder",
+    "input": {
+      "message": "I have my PO check-in next week and I need a ride",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "77002",
+        "intake_complete": true,
+        "supervision_status": "parole",
+        "top_need": "parole_reporting"
+      }
+    },
+    "expects": {
+      "parole_offer_present": true
+    },
+    "notes": "First turn with supervision=parole: draft appends the opt-in offer."
+  },
+  {
+    "id": "parole-offer-only-when-supervision-parole",
+    "category": "parole_reminder",
+    "input": {
+      "message": "I need housing tonight",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "77002",
+        "intake_complete": true,
+        "supervision_status": "unknown",
+        "top_need": "housing"
+      }
+    },
+    "expects": {
+      "parole_offer_present": false
+    },
+    "notes": "User with unknown supervision should never see the parole offer."
+  },
+  {
+    "id": "parole-offer-spanish",
+    "category": "parole_reminder",
+    "input": {
+      "message": "necesito ayuda con mi cita",
+      "language_hint": "es",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "78201",
+        "intake_complete": true,
+        "supervision_status": "parole",
+        "top_need": "parole_reporting",
+        "language": "es"
+      }
+    },
+    "expects": {
+      "parole_offer_present": true,
+      "reply_contains_any_of": ["Responde SI"]
+    },
+    "notes": "Spanish-speaking parolee gets the Spanish variant of the offer."
+  },
+  {
+    "id": "parole-no-leak-when-no-need-captured",
+    "category": "parole_reminder",
+    "input": {
+      "message": "what is the weather like",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "77002",
+        "intake_complete": true,
+        "supervision_status": "unknown",
+        "top_need": "unknown"
+      }
+    },
+    "expects": {
+      "parole_offer_present": false,
+      "crisis_must_not_fire": true
+    },
+    "notes": "Off-topic message: graph still runs, no false positives, no parole leak."
+  },
+  {
+    "id": "parole-offer-not-repeated",
+    "category": "parole_reminder",
+    "input": {
+      "message": "thanks, that helps",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "77002",
+        "intake_complete": true,
+        "supervision_status": "parole",
+        "top_need": "parole_reporting"
+      }
+    },
+    "expects": {
+      "parole_offer_present": true
+    },
+    "notes": "Note: prefill doesn't carry parole_reminder_offered through the runner today, so this test verifies the offer fires from a fresh state. The 'don't re-offer when offered' invariant is covered in tests/test_phase6_parole_reminder.py unit tests."
+  }
+]

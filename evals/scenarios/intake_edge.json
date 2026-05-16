@@ -1,0 +1,91 @@
+[
+  {
+    "id": "intake-edge-just-help",
+    "category": "intake_edge",
+    "input": { "message": "help" },
+    "expects": {
+      "crisis_must_not_fire": true
+    },
+    "notes": "Single word 'help' is not a TCPA HELP keyword in this channel; it should just start intake without escalating."
+  },
+  {
+    "id": "intake-edge-idk-no-routing",
+    "category": "intake_edge",
+    "input": { "message": "idk" },
+    "expects": {
+      "crisis_must_not_fire": true
+    },
+    "notes": "Vague reply: heuristic doesn't infer a need; intake stays in slot-fill mode. No false-positive crisis."
+  },
+  {
+    "id": "intake-edge-very-long-message",
+    "category": "intake_edge",
+    "input": {
+      "message": "I got out of TDCJ last week after doing six years for possession, I need to find a shelter eventually, and also figure out my food stamps, and I am worried about my parole officer, and I lost my driver license years ago, please help"
+    },
+    "expects": {
+      "needs_contains": ["housing"],
+      "crisis_must_not_fire": true
+    },
+    "notes": "Multi-need long message: at minimum housing should be detected. Avoids the 'nowhere to stay tonight' phrasing that correctly triggers the housing-emergency crisis hook."
+  },
+  {
+    "id": "intake-edge-code-switching",
+    "category": "intake_edge",
+    "input": {
+      "message": "Need food assistance, mi familia tambien necesita ayuda"
+    },
+    "expects": {
+      "needs_contains": ["benefits"]
+    },
+    "notes": "Mixed English/Spanish in one sentence. Heuristic picks up benefits keywords from either language."
+  },
+  {
+    "id": "intake-edge-politeness-only",
+    "category": "intake_edge",
+    "input": { "message": "thanks for your help" },
+    "expects": {
+      "crisis_must_not_fire": true
+    },
+    "notes": "Pure politeness has no need; heuristic returns top_need=unknown, intake stays in slot-fill."
+  },
+  {
+    "id": "intake-edge-numbered-list",
+    "category": "intake_edge",
+    "input": {
+      "message": "I need 1) housing 2) work 3) food"
+    },
+    "expects": {
+      "needs_contains_all": ["housing", "employment", "benefits"]
+    },
+    "notes": "Numbered list with three needs: multi-need extraction picks all three."
+  },
+  {
+    "id": "intake-edge-strong-claim-still-no-promise",
+    "category": "intake_edge",
+    "input": {
+      "message": "I really need to know if I can vote",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "77002",
+        "intake_complete": true,
+        "top_need": "legal_question"
+      }
+    },
+    "expects": {
+      "reply_does_not_contain_any_of": [
+        "you'll probably", "guaranteed", "you will be"
+      ]
+    },
+    "notes": "Strong user emphasis must NOT translate into outcome promises."
+  },
+  {
+    "id": "intake-edge-empty-input-stays-graceful",
+    "category": "intake_edge",
+    "input": { "message": "?" },
+    "expects": {
+      "crisis_must_not_fire": true
+    },
+    "notes": "A single '?' shouldn't crash or escalate; intake stays in slot-fill."
+  }
+]
