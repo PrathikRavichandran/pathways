@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => {
           short_name: "Pathways",
           description:
             "Conversational navigator for people leaving incarceration in Texas. Housing, food, work, ID, benefits, legal aid.",
-          theme_color: "#0e7490",
-          background_color: "#f8fafc",
+          theme_color: "#0D5C4F",
+          background_color: "#FAF7F2",
           display: "standalone",
           orientation: "portrait",
           scope: "/",
@@ -40,6 +40,12 @@ export default defineConfig(({ mode }) => {
               sizes: "512x512",
               type: "image/png",
               purpose: "any maskable",
+            },
+            {
+              src: "/icons/apple-touch-icon.png",
+              sizes: "180x180",
+              type: "image/png",
+              purpose: "any",
             },
           ],
         },

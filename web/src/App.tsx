@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   getOrCreateSession,
   resetSession,
@@ -7,11 +8,11 @@ import {
   type TurnResponse,
 } from "./api";
 import { type Lang, stageHint, t } from "./i18n";
+import { LogoMark, LogoMarkOnSurface, Wordmark } from "./Logo";
 
 type Bubble =
   | { kind: "user"; text: string; ts: number }
   | { kind: "bot"; text: string; resources: ResourceCard[]; lang: Lang; ts: number }
-  | { kind: "stage"; text: string; ts: number }
   | { kind: "error"; text: string; ts: number };
 
 // ---------------------------------------------------------------------------
@@ -70,20 +71,25 @@ export default function App() {
     const browser = (navigator.language || "en").toLowerCase();
     return browser.startsWith("es") ? "es" : "en";
   });
-  const [bubbles, setBubbles] = useState<Bubble[]>([
-    { kind: "bot", text: t("intent_greeting", lang), resources: [], lang, ts: Date.now() },
-  ]);
+  const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [stage, setStage] = useState<string | null>(null);
+  const [hasStarted, setHasStarted] = useState<boolean>(() => {
+    return localStorage.getItem("pathways.started") === "true";
+  });
   const install = useInstallPrompt();
   const threadRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-scroll on new bubble
   useEffect(() => {
     if (threadRef.current) {
-      threadRef.current.scrollTop = threadRef.current.scrollHeight;
+      threadRef.current.scrollTo({
+        top: threadRef.current.scrollHeight,
+        behavior: "smooth",
+      });
     }
   }, [bubbles, sending]);
 
@@ -99,7 +105,7 @@ export default function App() {
       try {
         const s = await getOrCreateSession(lang);
         if (!cancelled) setSessionId(s.session_id);
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           setBubbles((prev) => [
             ...prev,
@@ -117,15 +123,18 @@ export default function App() {
     };
   }, []); // run once
 
-  async function onSend() {
-    const text = input.trim();
-    if (!text || sending || !sessionId) return;
-    const userBubble: Bubble = { kind: "user", text, ts: Date.now() };
+  async function sendMessage(text: string) {
+    if (!text.trim() || sending || !sessionId) return;
+    if (!hasStarted) {
+      setHasStarted(true);
+      localStorage.setItem("pathways.started", "true");
+    }
+    const userBubble: Bubble = { kind: "user", text: text.trim(), ts: Date.now() };
     setBubbles((prev) => [...prev, userBubble]);
     setInput("");
     setSending(true);
     try {
-      const resp: TurnResponse = await sendTurn(sessionId, text);
+      const resp: TurnResponse = await sendTurn(sessionId, text.trim());
       const botBubble: Bubble = {
         kind: "bot",
         text: resp.reply || "...",
@@ -135,7 +144,6 @@ export default function App() {
       };
       setBubbles((prev) => [...prev, botBubble]);
       setStage(resp.intake_stage);
-      // Persist server-detected language preference
       if (resp.language && resp.language !== lang) {
         setLang(resp.language);
       }
@@ -154,15 +162,18 @@ export default function App() {
     }
   }
 
+  function onSend() {
+    sendMessage(input);
+  }
+
   function onReset() {
     if (!confirm(t("reset_confirm", lang))) return;
     resetSession();
+    localStorage.removeItem("pathways.started");
     setSessionId(null);
-    setBubbles([
-      { kind: "bot", text: t("intent_greeting", lang), resources: [], lang, ts: Date.now() },
-    ]);
+    setBubbles([]);
     setStage(null);
-    // re-mint a new session
+    setHasStarted(false);
     getOrCreateSession(lang).then((s) => setSessionId(s.session_id));
   }
 
@@ -173,58 +184,311 @@ export default function App() {
     }
   }
 
+  function startFromWelcome(seedText?: string) {
+    setHasStarted(true);
+    localStorage.setItem("pathways.started", "true");
+    if (seedText) {
+      sendMessage(seedText);
+    } else {
+      // Focus the composer for a fresh start with no seed
+      setTimeout(() => composerRef.current?.focus(), 50);
+    }
+  }
+
   const stageMsg = stageHint(stage, lang);
 
   return (
-    <div className="flex h-full flex-col bg-slate-50">
+    <div className="flex h-full flex-col bg-warmth text-ink-700 dark:text-cream-100">
       <Header
         lang={lang}
         onToggleLang={() => setLang(lang === "en" ? "es" : "en")}
         onReset={onReset}
+        showReset={hasStarted}
       />
 
-      {install.canInstall && (
-        <InstallBanner lang={lang} onInstall={install.install} onDismiss={install.dismiss} />
+      <AnimatePresence>
+        {install.canInstall && (
+          <InstallBanner
+            lang={lang}
+            onInstall={install.install}
+            onDismiss={install.dismiss}
+          />
+        )}
+      </AnimatePresence>
+
+      {hasStarted && stageMsg && <StageBar text={stageMsg} />}
+
+      {!hasStarted ? (
+        <WelcomeScreen lang={lang} onStart={startFromWelcome} />
+      ) : (
+        <ChatThread
+          bubbles={bubbles}
+          sending={sending}
+          lang={lang}
+          threadRef={threadRef}
+        />
       )}
 
-      {stageMsg && <StageBar text={stageMsg} />}
+      {hasStarted && (
+        <Composer
+          ref={composerRef}
+          value={input}
+          onChange={setInput}
+          onSend={onSend}
+          onKeyDown={onKeyDown}
+          disabled={!sessionId || sending}
+          sending={sending}
+          lang={lang}
+        />
+      )}
+    </div>
+  );
+}
 
-      <main
-        ref={threadRef}
-        className="chat-thread flex-1 overflow-y-auto px-4 py-4 pb-32"
-      >
-        <div className="mx-auto flex max-w-2xl flex-col gap-3">
+// ---------------------------------------------------------------------------
+// Welcome screen
+// ---------------------------------------------------------------------------
+
+function WelcomeScreen({
+  lang,
+  onStart,
+}: {
+  lang: Lang;
+  onStart: (seedText?: string) => void;
+}) {
+  const reduce = useReducedMotion();
+  const quickPrompts: { key: string; text: string }[] = [
+    { key: "housing", text: t("quick_housing", lang) },
+    { key: "food", text: t("quick_food", lang) },
+    { key: "work", text: t("quick_work", lang) },
+    { key: "id", text: t("quick_id", lang) },
+  ];
+
+  const fadeIn = (delay = 0) =>
+    reduce
+      ? { initial: false, animate: false as const }
+      : {
+          initial: { opacity: 0, y: 12 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1], delay },
+        };
+
+  return (
+    <main className="flex-1 overflow-y-auto px-5 py-6 pb-10">
+      <div className="mx-auto flex max-w-xl flex-col items-center text-center">
+        <motion.div
+          {...fadeIn(0)}
+          className="mt-4 mb-6 rounded-3xl bg-cream-50/60 p-3 shadow-soft dark:bg-ink-800/40"
+        >
+          <LogoMark size={88} withGlow />
+        </motion.div>
+        <motion.p
+          {...fadeIn(0.05)}
+          className="text-xs font-medium uppercase tracking-[0.18em] text-teal-600 dark:text-teal-300"
+        >
+          {t("welcome_eyebrow", lang)}
+        </motion.p>
+        <motion.h1
+          {...fadeIn(0.1)}
+          className="mt-3 font-display text-3xl font-semibold leading-tight text-ink-700 sm:text-4xl dark:text-cream-100"
+        >
+          {t("welcome_title", lang)}
+        </motion.h1>
+        <motion.p
+          {...fadeIn(0.18)}
+          className="mt-4 max-w-md text-base leading-relaxed text-ink-500 dark:text-cream-300"
+        >
+          {t("welcome_body", lang)}
+        </motion.p>
+
+        <motion.div
+          {...fadeIn(0.28)}
+          className="mt-7 flex w-full flex-col gap-3 sm:max-w-sm"
+        >
+          <button
+            onClick={() => onStart()}
+            className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-teal-600 px-6 py-3.5 text-base font-semibold text-cream-50 shadow-lift transition hover:bg-teal-700 active:translate-y-px dark:bg-teal-500 dark:hover:bg-teal-400"
+          >
+            {t("welcome_cta", lang)}
+            <span
+              aria-hidden
+              className="transition-transform group-hover:translate-x-0.5"
+            >
+              →
+            </span>
+          </button>
+        </motion.div>
+
+        <motion.div {...fadeIn(0.36)} className="mt-8 w-full">
+          <div className="mb-3 text-xs font-medium uppercase tracking-wider text-ink-400 dark:text-cream-400">
+            {lang === "en" ? "Or jump straight to:" : "O salta directo a:"}
+          </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            {quickPrompts.map((q) => (
+              <button
+                key={q.key}
+                onClick={() => onStart(q.text)}
+                className="rounded-full border border-cream-300 bg-cream-50/80 px-4 py-2 text-sm font-medium text-ink-600 shadow-soft transition hover:border-teal-400 hover:bg-cream-50 hover:text-teal-700 dark:border-ink-600 dark:bg-ink-800/60 dark:text-cream-200 dark:hover:border-teal-400 dark:hover:text-teal-300"
+              >
+                {q.text}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.p
+          {...fadeIn(0.5)}
+          className="mt-10 text-xs text-ink-400 dark:text-cream-400"
+        >
+          {t("privacy_note", lang)}
+        </motion.p>
+      </div>
+    </main>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Chat thread
+// ---------------------------------------------------------------------------
+
+function ChatThread({
+  bubbles,
+  sending,
+  lang,
+  threadRef,
+}: {
+  bubbles: Bubble[];
+  sending: boolean;
+  lang: Lang;
+  threadRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  return (
+    <main
+      ref={threadRef}
+      className="chat-thread flex-1 overflow-y-auto px-4 py-5 pb-40"
+    >
+      <div className="mx-auto flex max-w-2xl flex-col gap-4">
+        {bubbles.length === 0 && <FirstTurnBubble lang={lang} />}
+        <AnimatePresence initial={false}>
           {bubbles.map((b, i) => (
             <BubbleView key={i} bubble={b} lang={lang} />
           ))}
-          {sending && <TypingIndicator lang={lang} />}
-        </div>
-      </main>
+        </AnimatePresence>
+        {sending && <TypingIndicator />}
+      </div>
+    </main>
+  );
+}
 
-      <footer className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-white p-3">
-        <div className="mx-auto flex max-w-2xl items-end gap-2">
+function FirstTurnBubble({ lang }: { lang: Lang }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+      className="self-start max-w-[92%] rounded-3xl rounded-bl-md border border-cream-200 bg-cream-50 px-4 py-3 text-ink-700 shadow-soft dark:border-ink-700 dark:bg-ink-800 dark:text-cream-100"
+    >
+      {t("intent_greeting", lang)}
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Composer (sticky bottom)
+// ---------------------------------------------------------------------------
+
+type ComposerProps = {
+  value: string;
+  onChange: (v: string) => void;
+  onSend: () => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  disabled: boolean;
+  sending: boolean;
+  lang: Lang;
+};
+
+const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Composer(
+  { value, onChange, onSend, onKeyDown, disabled, sending, lang },
+  ref,
+) {
+  return (
+    <footer className="pb-safe fixed inset-x-0 bottom-0 z-20 border-t border-cream-200/80 bg-cream-50/85 backdrop-blur-md dark:border-ink-700 dark:bg-ink-900/85">
+      <div className="mx-auto flex max-w-2xl items-end gap-2 px-3 pb-3 pt-3 sm:px-4">
+        <div className="flex-1 rounded-3xl border border-cream-300 bg-cream-50 px-4 py-2 shadow-soft transition focus-within:border-teal-500 focus-within:ring-4 focus-within:ring-teal-500/15 dark:border-ink-700 dark:bg-ink-800">
           <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            ref={ref}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder={t("input_placeholder", lang)}
-            rows={2}
-            disabled={!sessionId || sending}
-            className="flex-1 resize-none rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base outline-none focus:border-pathways-600 focus:ring-2 focus:ring-pathways-100"
+            rows={1}
+            disabled={disabled}
+            className="block w-full resize-none bg-transparent text-base text-ink-700 outline-none placeholder:text-ink-400 disabled:opacity-60 dark:text-cream-100 dark:placeholder:text-cream-400"
+            style={{
+              maxHeight: "8rem",
+              minHeight: "1.5rem",
+            }}
+            onInput={(e) => {
+              const ta = e.currentTarget;
+              ta.style.height = "auto";
+              ta.style.height = Math.min(ta.scrollHeight, 128) + "px";
+            }}
           />
-          <button
-            onClick={onSend}
-            disabled={!sessionId || sending || !input.trim()}
-            className="shrink-0 rounded-2xl bg-pathways-700 px-5 py-3 text-base font-medium text-white shadow-sm transition hover:bg-pathways-900 disabled:cursor-not-allowed disabled:bg-slate-400"
-          >
-            {sending ? t("sending", lang) : t("send", lang)}
-          </button>
         </div>
-        <p className="mx-auto mt-2 max-w-2xl text-center text-xs text-slate-500">
-          {t("about", lang)}
-        </p>
-      </footer>
-    </div>
+        <button
+          onClick={onSend}
+          disabled={disabled || !value.trim()}
+          aria-label={t("send", lang)}
+          className="shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-cream-50 shadow-lift transition hover:bg-teal-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-cream-300 disabled:text-ink-300 dark:bg-teal-500 dark:hover:bg-teal-400 dark:disabled:bg-ink-700 dark:disabled:text-ink-400"
+        >
+          {sending ? <Spinner /> : <ArrowUp />}
+        </button>
+      </div>
+      <p className="mb-2 mx-auto max-w-2xl px-4 text-center text-[11px] text-ink-400 dark:text-cream-400">
+        {t("about", lang)}
+      </p>
+    </footer>
+  );
+});
+
+function ArrowUp() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 19V5M12 5l-6 6M12 5l6 6"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      className="animate-spin"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeOpacity="0.25"
+        strokeWidth="2.4"
+      />
+      <path
+        d="M21 12a9 9 0 0 1-9 9"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
@@ -236,42 +500,39 @@ function Header({
   lang,
   onToggleLang,
   onReset,
+  showReset,
 }: {
   lang: Lang;
   onToggleLang: () => void;
   onReset: () => void;
+  showReset: boolean;
 }) {
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white">
+    <header className="pt-safe sticky top-0 z-30 border-b border-cream-200/70 bg-cream-50/85 backdrop-blur-md dark:border-ink-700 dark:bg-ink-900/85">
       <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-xl bg-pathways-700 text-white flex items-center justify-center text-lg font-bold">
-            P
-          </div>
-          <div>
-            <div className="text-base font-semibold text-slate-900">
-              {t("app_title", lang)}
-            </div>
-            <div className="text-xs text-slate-500 leading-tight max-w-[40ch]">
-              {t("app_subtitle", lang)}
-            </div>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <span className="text-teal-600 dark:text-teal-300">
+            <LogoMarkOnSurface size={32} />
+          </span>
+          <Wordmark className="text-ink-700 dark:text-cream-100" />
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={onToggleLang}
             aria-label="Toggle language"
-            className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
+            className="rounded-full border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-teal-400 hover:text-teal-700 dark:border-ink-700 dark:text-cream-200 dark:hover:border-teal-400 dark:hover:text-teal-300"
           >
             {lang === "en" ? "ES" : "EN"}
           </button>
-          <button
-            onClick={onReset}
-            aria-label="New conversation"
-            className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
-          >
-            {t("reset", lang)}
-          </button>
+          {showReset && (
+            <button
+              onClick={onReset}
+              aria-label={t("reset", lang)}
+              className="rounded-full border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-teal-400 hover:text-teal-700 dark:border-ink-700 dark:text-cream-200 dark:hover:border-teal-400 dark:hover:text-teal-300"
+            >
+              {t("reset", lang)}
+            </button>
+          )}
         </div>
       </div>
     </header>
@@ -288,40 +549,50 @@ function InstallBanner({
   onDismiss: () => void;
 }) {
   return (
-    <div className="bg-pathways-50 border-b border-pathways-100 px-4 py-2">
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.24 }}
+      className="border-b border-coral-200/60 bg-coral-50/80 px-4 py-2 dark:border-coral-700/40 dark:bg-ink-800/70"
+    >
       <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 text-sm">
-        <span className="text-pathways-900">{t("install_hint", lang)}</span>
+        <span className="text-ink-700 dark:text-cream-200">
+          {t("install_hint", lang)}
+        </span>
         <div className="flex items-center gap-2">
           <button
             onClick={onInstall}
-            className="rounded-lg bg-pathways-700 px-3 py-1 text-white font-medium hover:bg-pathways-900"
+            className="rounded-full bg-coral-500 px-3 py-1.5 text-xs font-semibold text-cream-50 shadow-soft transition hover:bg-coral-600"
           >
             {t("install_app", lang)}
           </button>
           <button
             onClick={onDismiss}
-            className="text-pathways-900 text-xs hover:underline"
+            className="text-xs text-ink-500 underline-offset-2 hover:underline dark:text-cream-300"
           >
             {t("install_later", lang)}
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function StageBar({ text }: { text: string }) {
   return (
-    <div className="bg-amber-50 border-b border-amber-200 px-4 py-1 text-center text-xs text-amber-900">
+    <div className="border-b border-teal-200/40 bg-teal-50/60 px-4 py-1.5 text-center text-[11px] font-medium uppercase tracking-wider text-teal-700 dark:border-teal-800/40 dark:bg-ink-800/60 dark:text-teal-300">
       {text}
     </div>
   );
 }
 
-function TypingIndicator({ lang }: { lang: Lang }) {
+function TypingIndicator() {
   return (
-    <div className="self-start text-xs text-slate-500 italic">
-      {t("sending", lang)}
+    <div className="self-start rounded-3xl rounded-bl-md border border-cream-200 bg-cream-50 px-4 py-3 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <span className="typing-dot" />
+      <span className="typing-dot" />
+      <span className="typing-dot" />
     </div>
   );
 }
@@ -329,86 +600,151 @@ function TypingIndicator({ lang }: { lang: Lang }) {
 function BubbleView({ bubble, lang }: { bubble: Bubble; lang: Lang }) {
   if (bubble.kind === "user") {
     return (
-      <div className="self-end max-w-[85%] rounded-2xl rounded-br-md bg-pathways-700 px-4 py-2 text-white shadow-sm whitespace-pre-wrap">
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+        className="self-end max-w-[85%] whitespace-pre-wrap rounded-3xl rounded-br-md bg-teal-600 px-4 py-2.5 text-cream-50 shadow-lift dark:bg-teal-500"
+      >
         {bubble.text}
-      </div>
+      </motion.div>
     );
   }
   if (bubble.kind === "error") {
     return (
-      <div className="self-stretch rounded-xl bg-rose-50 border border-rose-200 px-4 py-2 text-sm text-rose-900">
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.24 }}
+        className="self-stretch rounded-2xl border border-coral-300/70 bg-coral-50 px-4 py-3 text-sm text-coral-700 dark:border-coral-700/50 dark:bg-coral-700/15 dark:text-coral-200"
+      >
         {bubble.text}
-      </div>
+      </motion.div>
     );
-  }
-  if (bubble.kind === "stage") {
-    return null;
   }
   // bot
   return (
-    <div className="self-start max-w-[92%] space-y-2">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+      className="self-start max-w-[92%] space-y-3"
+    >
       <div
-        className="rounded-2xl rounded-bl-md bg-white border border-slate-200 px-4 py-3 text-slate-900 shadow-sm whitespace-pre-wrap"
+        className="whitespace-pre-wrap rounded-3xl rounded-bl-md border border-cream-200 bg-cream-50 px-4 py-3 text-ink-700 shadow-soft dark:border-ink-700 dark:bg-ink-800 dark:text-cream-100"
         lang={bubble.lang}
       >
         {bubble.text}
       </div>
       {bubble.resources.length > 0 && (
-        <div className="space-y-2">
-          {bubble.resources.map((r) => (
-            <ResourceCardView key={r.id} card={r} lang={lang} />
+        <div className="space-y-2.5">
+          {bubble.resources.map((r, i) => (
+            <ResourceCardView key={r.id} card={r} lang={lang} index={i} />
           ))}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
-function ResourceCardView({ card, lang }: { card: ResourceCard; lang: Lang }) {
+function ResourceCardView({
+  card,
+  lang,
+  index,
+}: {
+  card: ResourceCard;
+  lang: Lang;
+  index: number;
+}) {
+  const reduce = useReducedMotion();
+  const tel = useMemo(
+    () => (card.phone ? card.phone.replace(/[^\d+]/g, "") : null),
+    [card.phone],
+  );
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-slate-900 truncate">
-            {card.name}
-          </div>
-          {card.distance_miles !== null && card.distance_miles !== undefined && (
-            <div className="text-xs text-slate-500">
-              ~{Math.round(card.distance_miles)} mi
+    <motion.div
+      initial={reduce ? false : { opacity: 0, y: 8 }}
+      animate={reduce ? false : { opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.36,
+        ease: [0.16, 1, 0.3, 1],
+        delay: Math.min(index * 0.06, 0.3),
+      }}
+      className="overflow-hidden rounded-2xl border border-cream-200 bg-cream-50 shadow-soft transition hover:shadow-lift dark:border-ink-700 dark:bg-ink-800"
+    >
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] font-semibold leading-snug text-ink-700 dark:text-cream-100">
+              {card.name}
             </div>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-400 dark:text-cream-400">
+              {card.distance_miles != null && (
+                <span>~{Math.round(card.distance_miles)} mi</span>
+              )}
+              {card.category && (
+                <>
+                  {card.distance_miles != null && <span>·</span>}
+                  <span className="capitalize">{card.category}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        {card.description && (
+          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-500 dark:text-cream-300">
+            {card.description}
+          </p>
+        )}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {tel && (
+            <a
+              href={`tel:${tel}`}
+              className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-3.5 py-1.5 text-xs font-semibold text-cream-50 shadow-soft transition hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400"
+            >
+              <PhoneIcon /> {card.phone}
+            </a>
+          )}
+          {card.url && (
+            <a
+              href={card.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-cream-300 px-3.5 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-teal-400 hover:text-teal-700 dark:border-ink-700 dark:text-cream-200 dark:hover:border-teal-400 dark:hover:text-teal-300"
+            >
+              <LinkIcon /> {t("visit", lang)}
+            </a>
           )}
         </div>
-        {card.category && (
-          <span className="shrink-0 rounded-full bg-pathways-100 px-2 py-0.5 text-xs font-medium text-pathways-700">
-            {card.category}
-          </span>
-        )}
       </div>
-      {card.description && (
-        <p className="mt-1 text-sm text-slate-700 line-clamp-3">
-          {card.description}
-        </p>
-      )}
-      <div className="mt-2 flex flex-wrap gap-2">
-        {card.phone && (
-          <a
-            href={`tel:${card.phone.replace(/[^\d+]/g, "")}`}
-            className="inline-flex items-center gap-1 rounded-lg bg-pathways-700 px-3 py-1 text-xs font-medium text-white hover:bg-pathways-900"
-          >
-            {t("call", lang)} {card.phone}
-          </a>
-        )}
-        {card.url && (
-          <a
-            href={card.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
-          >
-            {t("visit", lang)}
-          </a>
-        )}
-      </div>
-    </div>
+    </motion.div>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

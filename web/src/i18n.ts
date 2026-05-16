@@ -17,15 +17,15 @@ export const T = {
   },
   send: { en: "Send", es: "Enviar" },
   sending: { en: "Sending…", es: "Enviando…" },
-  reset: { en: "New conversation", es: "Nueva conversación" },
+  reset: { en: "New chat", es: "Nueva charla" },
   reset_confirm: {
     en: "Start a fresh conversation? Your current intake will be lost.",
     es: "¿Empezar una conversación nueva? Se perderá el intake actual.",
   },
   install_app: { en: "Install app", es: "Instalar app" },
   install_hint: {
-    en: "Install Pathways to your home screen for offline access.",
-    es: "Instala Pathways en tu pantalla de inicio para acceso sin internet.",
+    en: "Install Pathways for offline access.",
+    es: "Instala Pathways para acceso sin internet.",
   },
   install_later: { en: "Maybe later", es: "Tal vez después" },
   intent_greeting: {
@@ -43,20 +43,45 @@ export const T = {
   call: { en: "Call", es: "Llamar" },
   visit: { en: "Visit website", es: "Visitar sitio" },
   about: {
-    en: "Built as a Claude Code architecture demo. Open source on GitHub.",
-    es: "Construido como demo de arquitectura de Claude Code. Open source en GitHub.",
+    en: "Free and confidential. Texas-only.",
+    es: "Gratis y confidencial. Solo para Texas.",
   },
   stage_hint_name: {
-    en: "Step 1 of 3: telling me your name",
-    es: "Paso 1 de 3: tu nombre",
+    en: "Step 1 of 3 · your name",
+    es: "Paso 1 de 3 · tu nombre",
   },
   stage_hint_location: {
-    en: "Step 2 of 3: where you are",
-    es: "Paso 2 de 3: dónde estás",
+    en: "Step 2 of 3 · where you are",
+    es: "Paso 2 de 3 · dónde estás",
   },
   stage_hint_need: {
-    en: "Step 3 of 3: what you need most",
-    es: "Paso 3 de 3: qué necesitas más",
+    en: "Step 3 of 3 · what you need most",
+    es: "Paso 3 de 3 · qué necesitas más",
+  },
+  // Welcome screen
+  welcome_eyebrow: {
+    en: "Texas reentry navigator",
+    es: "Navegador de reingreso en Texas",
+  },
+  welcome_title: {
+    en: "You're not figuring this out alone.",
+    es: "No tienes que resolver esto solo.",
+  },
+  welcome_body: {
+    en: "Tell me what you need most right now. I'll point you to real, verified help in Texas: housing, food, work, ID, benefits, legal aid.",
+    es: "Cuéntame qué necesitas más en este momento. Te conectaré con ayuda real y verificada en Texas: vivienda, comida, trabajo, identificación, beneficios y asistencia legal.",
+  },
+  welcome_cta: {
+    en: "Let's get started",
+    es: "Empecemos",
+  },
+  quick_housing: { en: "I need housing", es: "Necesito vivienda" },
+  quick_food: { en: "I need food", es: "Necesito comida" },
+  quick_work: { en: "I need work", es: "Necesito trabajo" },
+  quick_id: { en: "I need my ID", es: "Necesito mi identificación" },
+  privacy_note: {
+    en: "Free, confidential. We never share your number.",
+    es: "Gratis, confidencial. Nunca compartimos tu número.",
   },
 };
 
