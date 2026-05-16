@@ -13,15 +13,17 @@ short_description: AI navigator for post-incarceration reentry in Texas
 # Pathways
 
 [![CI](https://github.com/PrathikRavichandran/pathways/actions/workflows/ci.yml/badge.svg)](https://github.com/PrathikRavichandran/pathways/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-41%2F41%20passing-brightgreen)](https://github.com/PrathikRavichandran/pathways/actions)
+[![Evals](https://github.com/PrathikRavichandran/pathways/actions/workflows/evals.yml/badge.svg)](https://github.com/PrathikRavichandran/pathways/actions/workflows/evals.yml)
+[![Tests](https://img.shields.io/badge/tests-241%20unit%20%2B%2073%20evals-brightgreen)](https://github.com/PrathikRavichandran/pathways/actions)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![HF Space](https://img.shields.io/badge/%F0%9F%A4%97%20HF%20Space-live-yellow)](https://prathik10-pathways.hf.space/docs)
+[![PWA](https://img.shields.io/badge/PWA-pathways--iota.vercel.app-7AB182)](https://pathways-iota.vercel.app/)
 
-A conversational AI navigator for people leaving incarceration in Texas. Built as a Claude Code architecture: layered **Skills**, **sub-agents**, **hooks**, **MCP servers**, **settings**, and a distributable **plugin** — composed into one reliable workflow for a safety-critical domain.
+A conversational AI navigator for people leaving incarceration in Texas. Built as a Claude Code architecture: layered **Skills**, **sub-agents**, **hooks**, **MCP servers**, **settings**, and a distributable **plugin**, composed into one reliable workflow for a safety-critical domain.
 
-This repo is both a real product-in-progress *and* an opinionated demonstration of how Claude Code primitives compose when wrong answers cause real harm — legal misinformation, missed deadlines, lost benefits, or a missed crisis signal.
+This repo is both a real product-in-progress AND an opinionated demonstration of how Claude Code primitives compose when wrong answers cause real harm: legal misinformation, missed deadlines, lost benefits, or a missed crisis signal.
 
-> **Status:** Active development. The architecture is complete and the demo flow runs end-to-end against real Texas statutory data. Tests: **150/150 passing** (hooks + LangGraph end-to-end across 6 conversation paths, plus regression tests for crisis-keyword phrasings discovered in live testing, plus the Phase 4 web channel). Twilio dispatch and live Pinecone are stubbed behind interfaces and documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+> **Status:** Phase 6 complete. The system runs end-to-end across three audiences (SMS user, PWA user, caseworker dashboard) on the same FastAPI + LangGraph + Skills + MCP backend. Quality signal: **241 unit tests + 73 eval scenarios** all green; CI gates merges on a per-category pass rate with crisis at 100%. Two items remain deferred-with-design ([`docs/PHASE6_DEFERRED.md`](docs/PHASE6_DEFERRED.md)): MMS photo extraction and warm-transfer voice, both blocked by paid Twilio dependencies. The full chronological build is in [`docs/JOURNAL.md`](docs/JOURNAL.md).
 
 ---
 
@@ -29,11 +31,14 @@ This repo is both a real product-in-progress *and* an opinionated demonstration 
 
 | Surface | URL | Try this |
 |---|---|---|
-| 🩺 **API health** | <https://prathik10-pathways.hf.space/health> | Returns `{"status":"ok","version":"0.1.0"}` |
-| 📚 **OpenAPI / Swagger** | <https://prathik10-pathways.hf.space/docs> | Interactive — try `/_debug/invoke` with `{"message":"Can I vote in Texas if I'm on parole?"}` |
+| 📱 **Live PWA** | <https://pathways-iota.vercel.app/> | Installable on iOS + Android home screens. Forest + Marigold palette, bilingual UI, four quick-start chips. |
+| 🩺 **API health** | <https://prathik10-pathways.hf.space/health> | Returns `{"status":"ok","version":"0.6.0", "channels":["sms","web"], "modules":["dashboard","parole_reminders","writeback"]}` |
+| 📚 **OpenAPI / Swagger** | <https://prathik10-pathways.hf.space/docs> | Interactive. Try `/_debug/invoke` with `{"message":"Can I vote in Texas if I'm on parole?"}` |
+| 📊 **Caseworker dashboard** | <https://prathik10-pathways.hf.space/dashboard/> | Token-gated. Demo mode accepts any `Authorization: Bearer <anything>`. Anonymized aggregates only; no PII ever stored. |
 | 🧠 **Architecture deep-dive** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Why each Claude Code primitive is load-bearing in a safety-critical domain |
 | 🎬 **Per-primitive walkthrough** | [`docs/SHOWCASE.md`](docs/SHOWCASE.md) | Code-trace tour: see exactly what a Skill, sub-agent, hook, and MCP server look like in practice |
-| 💬 **Sample conversations** | [`examples/sample_conversations.md`](examples/sample_conversations.md) | 5 fully-annotated SMS dialogues end-to-end (housing crisis, voting eligibility, multi-need, etc.) |
+| 📓 **Dev journal** | [`docs/JOURNAL.md`](docs/JOURNAL.md) | Public build log, six phases, every shipped feature dated |
+| 💬 **Sample conversations** | [`examples/sample_conversations.md`](examples/sample_conversations.md) | 5 fully-annotated SMS dialogues end-to-end |
 
 ### Install as a Claude Code plugin (loads all 7 Skills + 4 sub-agents + 3 hooks into your own session)
 
@@ -200,30 +205,40 @@ license back.
 
 You'll see: `intake-assessment` Skill auto-loads → routes to `housing-pathway` and `record-clearing-tx` → calls `pathways-corpus` and `tx-resources` MCP servers → `compliance-auditor` sub-agent validates citations → final response cites NICCC sections and offers SMS handoff to a real navigator.
 
-## What's mocked vs. real
+## What's shipped vs. deferred
 
 | Concern | Status |
 |---|---|
-| LangGraph state machine | **Real, runs.** 7 nodes wired (intake → retrieve → match → draft → audit → send/escalate), bounded revision loop |
-| All 7 Skills | Real, with realistic content (not stubs) |
-| All 4 sub-agents | Real definitions with frontmatter-enforced capability scoping |
-| All 3 hooks | Real, executable Python; **136/136 hook + graph tests passing** |
-| `pathways-corpus` MCP server | **Real**, 65 entries fetched from sll.texas.gov and NICCC, BM25 retrieval, tested |
-| `tx-resources` MCP server | **Real**, 18 curated TX reentry orgs, region-aware filter, tested |
-| `twilio-sms` MCP server | Interface defined, send is stubbed |
-| `pathways-postgres` MCP server | Interface defined, SQL views documented |
-| Pinecone | Local BM25 equivalent in demo; production upgrade path documented |
-| FastAPI ingress | **Real**, `/sms`, `/health`, `/_debug/invoke` routes, lifespan warm-up |
-| Tests | **136/136 passing**: hook unit tests + graph end-to-end tests + crisis-keyword regression suite covering live-discovered phrasings |
+| LangGraph state machine (7 nodes; intake → retrieve → match → draft → audit → send/escalate; bounded revision loop) | **Real** |
+| 7 Skills + 4 sub-agents + 3 hooks (`.claude/`) | **Real**; plugin-installable via `claude plugin install .` |
+| `pathways-corpus` MCP server (BM25 + optional hybrid retrieval) | **Real**, 95 curated entries (federal CFR + TX statutes + NICCC) |
+| `tx-resources` MCP server (geo-aware nearby ranking) | **Real**, ~880 records after HRSA + curated orgs ingest; covers all 254 TX counties |
+| Multi-turn intake with checkpointer (Phase 1) | **Real**, Postgres-backed in prod, in-memory in tests |
+| Twilio webhook + signature verification + TCPA STOP/HELP/START (Phase 1) | **Real**, trial-mode aware |
+| Spanish + multi-need routing + Spanish crisis hook patterns (Phase 3) | **Real** |
+| PWA channel at `/web/*` + React 19 installable PWA (Phase 4) | **Real**, [live on Vercel](https://pathways-iota.vercel.app/) |
+| Provider-pluggable LLM (`pathways/llm/`) with Anthropic default + Gemini fallback (Phase 5) | **Real** |
+| Eval harness with 73 frozen scenarios + CI gate (Phase 5) | **Real**, crisis category must be 100% to merge |
+| Hybrid retrieval (BM25 + BGE-small dense, RRF fusion; opt-in) | **Real**, falls back to BM25 if sidecar or sentence-transformers missing |
+| Caseworker dashboard at `/dashboard/*` (Phase 5b) | **Real**, per-partner bearer auth + region scoping; demo mode for recruiter clicks |
+| Opt-in parole-reporting reminder (Phase 6) | **Queued**: API + intake hook + admin cron endpoint shipped; actual SMS send waits on the forward `thread_id → phone` map (see below) |
+| Anonymous monthly trend reports as Markdown export (Phase 6) | **Real**, `GET /dashboard/api/report.md` |
+| NGO write-back queue (Phase 6) | **Queued**: API + queue table shipped; actual SMS send waits on the same phone map |
+| MMS photo extraction of TDCJ release packet | **Deferred** ([`docs/PHASE6_DEFERRED.md`](docs/PHASE6_DEFERRED.md)): blocked on paid Twilio MMS + Claude vision spend |
+| Warm-transfer voice connect | **Deferred** ([`docs/PHASE6_DEFERRED.md`](docs/PHASE6_DEFERRED.md)): blocked on paid Twilio Voice |
+| Forward `thread_id → phone` resolver (encrypted) | **Deferred** ([`docs/PHASE6_DEFERRED.md`](docs/PHASE6_DEFERRED.md)): three lines from unblocking real-world send for both shipped queues |
 
-## What I'd build next, in order
+## What's next
 
-1. **Real NICCC ingestion pipeline.** Currently 40 hand-curated excerpts. Production needs the full NICCC corpus chunked, embedded, and indexed with state filters.
-2. **Eval harness.** A 50-question Texas reentry rubric with ground-truth citations. LLM-as-judge for citation correctness, exact-match for eligibility outcomes. Run on every PR.
-3. **Twilio production wiring.** Webhook receiver, opt-in/opt-out compliance, message threading.
-4. **Multi-language.** Spanish first. The Texas reentry population includes a meaningful Spanish-monolingual subset.
-5. **Caseworker UI.** Next.js PWA wrapping the same backend, for navigators managing 30+ clients each.
-6. **B2B SaaS packaging.** Multi-tenant, per-org NICCC corpora (some orgs have state-specific addenda), org-scoped analytics.
+The technical surface is comprehensive. What it needs now is real users and real feedback.
+
+**Operator-side wiring left to do** (~half a day):
+1. Set `PATHWAYS_ADMIN_TOKEN` on the HF Space and add a daily GitHub Actions cron to POST to `/admin/run-parole-reminders`.
+2. Wire the forward phone map (`pathways/sessions/phone_map.py` with a small `session_phones` table; encrypt with `PATHWAYS_PHONE_ENCRYPTION_KEY`). Until this is in place, both parole reminders and NGO write-back persist in their queues and the daily cron reports `skipped_no_phone` honestly.
+
+**Then partner outreach.** The dashboard exists so partner NGOs can see what's flowing through their region; that conversation is what unlocks pilot users.
+
+**Deferred-with-design.** MMS extraction and warm-transfer voice are documented in [`docs/PHASE6_DEFERRED.md`](docs/PHASE6_DEFERRED.md) with their blockers and unblock criteria. Both gate on paid Twilio features.
 
 ## Why I built this
 
