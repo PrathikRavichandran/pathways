@@ -315,7 +315,7 @@ function WelcomeScreen({
           {...fadeIn(0)}
           className="mt-4 mb-6 rounded-3xl bg-cream-50/60 p-3 shadow-soft dark:bg-ink-800/40"
         >
-          <LogoMark size={120} withGlow />
+          <LogoMark size={240} withGlow />
         </motion.div>
         <motion.p
           {...fadeIn(0.05)}
@@ -549,7 +549,7 @@ function Header({
       <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2.5">
           <span className="text-forest-600 dark:text-forest-300">
-            <LogoMarkOnSurface size={40} />
+            <LogoMarkOnSurface size={80} />
           </span>
           <Wordmark className="text-ink-700 dark:text-cream-100" />
         </div>
