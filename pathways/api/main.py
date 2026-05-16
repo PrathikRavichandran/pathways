@@ -30,10 +30,12 @@ from contextlib import asynccontextmanager
 from typing import Any, Optional
 
 from fastapi import FastAPI, Form, Request, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from pathways.api.twilio_signature import verify_twilio_signature
+from pathways.api.web import router as web_router
 from pathways.graph import get_app
 from pathways.sessions import (
     seen_message_sid,
@@ -63,9 +65,30 @@ async def lifespan(app: FastAPI):
 api = FastAPI(
     title="Pathways API",
     description="Conversational AI navigator for post-incarceration reentry in Texas.",
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
 )
+
+# CORS for the Phase 4 PWA. Restrict to the deploy origin plus localhost dev.
+# The PWA URL is set via env so the same image works across staging and prod.
+_PWA_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "PATHWAYS_WEB_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://localhost:3000",
+    ).split(",")
+    if origin.strip()
+]
+api.add_middleware(
+    CORSMiddleware,
+    allow_origins=_PWA_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+# Mount the web channel router. Sibling to /sms; the PWA hits these endpoints.
+api.include_router(web_router)
 
 
 # ---------------------------------------------------------------------------
@@ -77,8 +100,9 @@ api = FastAPI(
 def health() -> dict:
     return {
         "status": "ok",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "checkpoint_backend": os.environ.get("PATHWAYS_CHECKPOINT_BACKEND", "memory"),
+        "channels": ["sms", "web"],
     }
 
 

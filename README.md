@@ -21,7 +21,7 @@ A conversational AI navigator for people leaving incarceration in Texas. Built a
 
 This repo is both a real product-in-progress *and* an opinionated demonstration of how Claude Code primitives compose when wrong answers cause real harm — legal misinformation, missed deadlines, lost benefits, or a missed crisis signal.
 
-> **Status:** Active development. The architecture is complete and the demo flow runs end-to-end against real Texas statutory data. Tests: **136/136 passing** (hooks + LangGraph end-to-end across 6 conversation paths, plus regression tests for crisis-keyword phrasings discovered in live testing). Twilio dispatch and live Pinecone are stubbed behind interfaces and documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+> **Status:** Active development. The architecture is complete and the demo flow runs end-to-end against real Texas statutory data. Tests: **150/150 passing** (hooks + LangGraph end-to-end across 6 conversation paths, plus regression tests for crisis-keyword phrasings discovered in live testing, plus the Phase 4 web channel). Twilio dispatch and live Pinecone are stubbed behind interfaces and documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 

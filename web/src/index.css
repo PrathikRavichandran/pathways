@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #f8fafc;
+}
+
+/* Smooth scrolling for the chat thread */
+.chat-thread {
+  scroll-behavior: smooth;
+}
