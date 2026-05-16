@@ -22,6 +22,35 @@ from typing import Optional
 
 _CHECKPOINTER = None
 
+# Types from pathways.state that the serializer must be allowed to
+# deserialize from msgpack. Without this, langgraph emits deprecation
+# warnings on every checkpoint load and will hard-fail in a future
+# version (or now with LANGGRAPH_STRICT_MSGPACK=true). Keep in sync
+# with pathways/state.py.
+_ALLOWED_PATHWAYS_TYPES = (
+    ("pathways.state", "TopNeed"),
+    ("pathways.state", "SupervisionStatus"),
+    ("pathways.state", "CrisisCategory"),
+    ("pathways.state", "IntakeStage"),
+    ("pathways.state", "AuditVerdict"),
+    ("pathways.state", "IntakeProfile"),
+    ("pathways.state", "Retrieval"),
+    ("pathways.state", "AuditResult"),
+    ("pathways.state", "CrisisSignal"),
+    ("pathways.state", "PathwaysState"),
+)
+
+
+def _make_serde():
+    """Build the JsonPlusSerializer with pickle fallback + allowlisted
+    pathways.state types so msgpack deserialization is explicit, not
+    warning-driven."""
+    from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+    return JsonPlusSerializer(
+        pickle_fallback=True,
+        allowed_msgpack_modules=_ALLOWED_PATHWAYS_TYPES,
+    )
+
 
 def get_checkpointer():
     """Return the configured checkpointer (singleton).
@@ -46,8 +75,7 @@ def get_checkpointer():
         # IntakeProfile, AuditResult, etc.). JsonPlusSerializer with the
         # pickle fallback round-trips Pydantic objects correctly.
         from langgraph.checkpoint.memory import MemorySaver
-        from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
-        _CHECKPOINTER = MemorySaver(serde=JsonPlusSerializer(pickle_fallback=True))
+        _CHECKPOINTER = MemorySaver(serde=_make_serde())
 
     return _CHECKPOINTER
 
@@ -73,7 +101,6 @@ def _make_postgres_checkpointer():
     Creates the langgraph checkpoint tables on first call (idempotent).
     """
     from langgraph.checkpoint.postgres import PostgresSaver
-    from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
     from psycopg.rows import dict_row
     from psycopg_pool import ConnectionPool
 
@@ -95,19 +122,18 @@ def _make_postgres_checkpointer():
         open=True,
     )
     saver = PostgresSaver(pool)
-    saver.serde = JsonPlusSerializer(pickle_fallback=True)
+    saver.serde = _make_serde()
     saver.setup()
     return saver
 
 
 def _make_sqlite_checkpointer():
     from langgraph.checkpoint.sqlite import SqliteSaver
-    from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 
     sqlite_path = os.environ.get(
         "PATHWAYS_SQLITE_PATH", "pathways_checkpoints.sqlite"
     )
     cm = SqliteSaver.from_conn_string(sqlite_path)
     saver = cm.__enter__()
-    saver.serde = JsonPlusSerializer(pickle_fallback=True)
+    saver.serde = _make_serde()
     return saver

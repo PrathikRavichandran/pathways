@@ -13,21 +13,11 @@ graph runs end-to-end and tests pass without external services.
 from __future__ import annotations
 
 import json
-import os
 import re
 from typing import Any
 
-from anthropic import Anthropic
+from pathways.llm import LLMUnavailable, get_llm
 from pathways.state import AuditResult, AuditVerdict, PathwaysState
-
-_CLIENT: Anthropic | None = None
-
-
-def _client() -> Anthropic:
-    global _CLIENT
-    if _CLIENT is None:
-        _CLIENT = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-    return _CLIENT
 
 
 AUDIT_SYSTEM = """You are the compliance-auditor sub-agent for Pathways. You receive a draft response, the retrievals it was built from, and the user's question. You produce ONLY a JSON verdict — no prose outside JSON.
@@ -55,13 +45,12 @@ def run(state: PathwaysState) -> dict[str, Any]:
             "escalation_reason": "no_draft_to_audit",
         }
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    try:
+        audit = _llm_audit(state)
+    except LLMUnavailable:
         audit = _rule_based_audit(state)
-    else:
-        try:
-            audit = _llm_audit(state)
-        except Exception:
-            audit = _rule_based_audit(state)
+    except Exception:
+        audit = _rule_based_audit(state)
 
     # Decide where to route
     if audit.verdict == AuditVerdict.PASS:
@@ -96,13 +85,12 @@ def _llm_audit(state: PathwaysState) -> AuditResult:
         "retrievals": [r.model_dump(mode="json") for r in state.retrievals],
         "user_query": state.user_message,
     }
-    resp = _client().messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=600,
+    text = get_llm("audit").invoke(
         system=AUDIT_SYSTEM,
-        messages=[{"role": "user", "content": json.dumps(payload)}],
+        user=json.dumps(payload),
+        max_tokens=600,
+        temperature=0.0,
     )
-    text = resp.content[0].text.strip()
     if text.startswith("```"):
         text = text.split("\n", 1)[1] if "\n" in text else text
         text = text.rsplit("```", 1)[0]

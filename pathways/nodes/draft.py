@@ -13,20 +13,10 @@ so the graph still runs end-to-end and the test suite passes.
 from __future__ import annotations
 
 import json
-import os
 from typing import Any
 
-from anthropic import Anthropic
+from pathways.llm import LLMUnavailable, get_llm
 from pathways.state import PathwaysState
-
-_CLIENT: Anthropic | None = None
-
-
-def _client() -> Anthropic:
-    global _CLIENT
-    if _CLIENT is None:
-        _CLIENT = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-    return _CLIENT
 
 
 DRAFT_SYSTEM_EN = """You are a Pathways navigator drafting a reply to a user in Texas who is navigating post-incarceration reentry. The Skills loaded in this session encode the protocol; follow them. Hard rules from CLAUDE.md apply: cite every factual legal claim, never give legal/clinical advice, never promise outcomes, default to handoff when uncertain. SMS-shaped: two short paragraphs max, plain language, no bullets, no emojis.
@@ -59,14 +49,16 @@ Si la persona tiene múltiples necesidades, reconoce cada una pero comienza con 
 
 
 def run(state: PathwaysState) -> dict[str, Any]:
-    """LangGraph node entry point."""
+    """LangGraph node entry point.
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        draft = _template_draft(state)
-        return {"draft_response": draft, "next_node": "audit"}
-
+    Calls the smart-tier LLM for synthesis. On LLMUnavailable (no API
+    key, SDK error, content filter, etc) falls back to a deterministic
+    bilingual template so the graph still produces a valid reply.
+    """
     try:
         draft = _llm_draft(state)
+    except LLMUnavailable:
+        draft = _template_draft(state)
     except Exception:
         draft = _template_draft(state)
 
@@ -83,13 +75,12 @@ def _llm_draft(state: PathwaysState) -> str:
     language = state.intake.language or "en"
     system = DRAFT_SYSTEM_ES if language == "es" else DRAFT_SYSTEM_EN
 
-    resp = _client().messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=600,
+    return get_llm("smart").invoke(
         system=system,
-        messages=[{"role": "user", "content": json.dumps(user_content)}],
+        user=json.dumps(user_content),
+        max_tokens=600,
+        temperature=0.2,
     )
-    return resp.content[0].text.strip()
 
 
 def _template_draft(state: PathwaysState) -> str:

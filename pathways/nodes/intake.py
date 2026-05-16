@@ -32,10 +32,9 @@ Phase 1 vs Phase 0
 from __future__ import annotations
 
 import json
-import os
 from typing import Any
 
-from anthropic import Anthropic
+from pathways.llm import LLMUnavailable, get_llm
 from pathways.state import (
     IntakeProfile,
     IntakeStage,
@@ -52,16 +51,6 @@ from pathways.nodes.intake_slots import (
     prompt_for_slot,
     stage_for_slot,
 )
-
-
-_CLIENT: Anthropic | None = None
-
-
-def _client() -> Anthropic:
-    global _CLIENT
-    if _CLIENT is None:
-        _CLIENT = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-    return _CLIENT
 
 
 INTAKE_SYSTEM_PROMPT = """You extract routing fields from a user message for a Texas reentry navigation assistant. Return ONLY a JSON object with these fields. Do not include prose.
@@ -151,24 +140,23 @@ def run(state: PathwaysState) -> dict[str, Any]:
 
 
 def _extract(state: PathwaysState) -> dict:
-    """Run the LLM extractor; fall back to the keyword heuristic on any
-    error or when no API key is set (demo mode)."""
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        return _heuristic_extract(state.user_message)
+    """Run the LLM extractor; fall back to the keyword heuristic on
+    LLMUnavailable (no key, model error, etc) or any parse failure."""
     try:
         return _llm_extract(state.user_message)
+    except LLMUnavailable:
+        return _heuristic_extract(state.user_message)
     except Exception:
         return _heuristic_extract(state.user_message)
 
 
 def _llm_extract(user_message: str) -> dict:
-    response = _client().messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=500,
+    text = get_llm("fast").invoke(
         system=INTAKE_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_message}],
+        user=user_message,
+        max_tokens=500,
+        temperature=0.0,
     )
-    text = response.content[0].text.strip()
     if text.startswith("```"):
         text = text.split("\n", 1)[1] if "\n" in text else text
         text = text.rsplit("```", 1)[0]
