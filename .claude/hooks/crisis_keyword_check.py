@@ -120,6 +120,71 @@ KEYWORDS = [
         r"freezing\s+(outside|tonight)"
         r")\b",
         re.I), "housing_emergency"),
+
+    # =========================================================================
+    # Phase 3: Spanish-language crisis patterns.
+    # Same design principles as the English patterns above: bias toward false
+    # positives (the crisis-response Skill has a graceful exit), cover the
+    # most common phrasings actual Spanish speakers use, do not require
+    # accents (people on basic phone keyboards often skip them).
+    # Sources: Crisis Text Line ES corpus, SAMHSA's Spanish hotline scripts,
+    # informal review of Spanish-language reentry support forums.
+    # =========================================================================
+
+    # Suicidality (ES)
+    (re.compile(
+        r"\b("
+        r"(me\s+)?quiero\s+(matar(me)?|morir)|"
+        r"(me\s+)?voy\s+a\s+(matar(me)?|morir)|"
+        r"(pensando|pienso)\s+en\s+(suicid(io|arme|arme)|matar(me)?)|"
+        r"acabar\s+con\s+(todo|mi\s+vida)|"
+        r"ya\s+no\s+(quiero|aguanto)\s+(vivir|estar\s+aqu[íi])|"
+        r"no\s+vale\s+la\s+pena\s+(seguir|vivir)|"
+        r"mejor\s+(estar(\s+)?muerto|que\s+muera)"
+        r")\b",
+        re.I), "suicide"),
+
+    # Self-harm (ES)
+    (re.compile(
+        r"\b("
+        r"me\s+cort[éeo]|"
+        r"cortarme|"
+        r"hacerme\s+da[ñn]o|"
+        r"lastimarme"
+        r")\b",
+        re.I), "self_harm"),
+
+    # Overdose / substance crisis (ES)
+    (re.compile(
+        r"\b("
+        r"(me\s+)?sobredos[ie]|"
+        r"tom[éeo]\s+demasiad[oa]|"
+        r"no\s+puedo\s+(dejar|parar)\s+de\s+usar|"
+        r"llevo\s+(todo\s+el\s+d[íi]a|toda\s+la\s+noche)\s+(usando|drog[áa]ndome)"
+        r")\b",
+        re.I), "substance"),
+
+    # Domestic violence in progress (ES)
+    (re.compile(
+        r"\b("
+        r"(me\s+)?est[áa]\s+pegando|"
+        r"me\s+(pega|golpea)|"
+        r"abusa\s+de\s+m[íi]|"
+        r"esconderme\s+de\s+(él|ella|ellos)|"
+        r"(él|ella)\s+me\s+va\s+a\s+(matar|hacer\s+da[ñn]o)"
+        r")\b",
+        re.I), "domestic_violence"),
+
+    # Housing emergency tonight (ES). 'Hoy en la noche' or 'esta noche' anchor.
+    (re.compile(
+        r"\b("
+        r"sin\s+(d[óo]nde|donde)\s+(dormir|ir|quedarme)\s+(esta\s+noche|hoy)|"
+        r"durmiendo\s+(en\s+(la\s+)?calle|afuera|en\s+(mi\s+|el\s+)?carro)\s+(esta\s+noche|hoy)|"
+        r"no\s+tengo\s+(d[óo]nde\s+(dormir|quedarme)|techo)|"
+        r"estoy\s+(en\s+la\s+)?calle\s+(esta\s+noche|hoy)|"
+        r"(estoy\s+)?congel[áa]ndome\s+(afuera|esta\s+noche)"
+        r")\b",
+        re.I), "housing_emergency"),
 ]
 
 

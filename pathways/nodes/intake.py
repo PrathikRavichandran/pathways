@@ -176,22 +176,69 @@ def _llm_extract(user_message: str) -> dict:
 
 
 def _heuristic_extract(user_message: str) -> dict:
-    """Demo-mode fallback. Keyword-based, intentionally simple."""
+    """Demo-mode fallback. Keyword-based, intentionally simple.
+
+    Phase 3 update: collect ALL matching need categories rather than
+    stopping at the first. This is what enables multi-need routing
+    ('I need food AND a job') to surface both pathways instead of one.
+    Also adds Spanish keyword coverage for the same categories so
+    Spanish-first messages get routed correctly even before the LLM
+    extractor sees them.
+    """
     msg = user_message.lower()
-    need = "unknown"
-    if any(k in msg for k in ["shelter", "place to stay", "nowhere to live",
-                              "homeless", "housing", "place to sleep"]):
-        need = "housing"
-    elif any(k in msg for k in ["job", "work", "hire", "employment", "career"]):
-        need = "employment"
-    elif any(k in msg for k in ["snap", "food stamps", "medicaid", "tanf", "benefits", "food"]):
-        need = "benefits"
-    elif any(k in msg for k in ["id ", "social security card", "driver's license", "driver license"]):
-        need = "id_documents"
-    elif any(k in msg for k in ["expunge", "expunction", "non-disclosure", "seal", "clear my record"]):
-        need = "record_clearing"
-    elif any(k in msg for k in ["can i ", "am i eligible", "rule", "law"]):
-        need = "legal_question"
+
+    # English + Spanish keyword sets, indexed by category.
+    # Order matters only for `top_need` (first match wins); all matches
+    # accumulate into `needs`.
+    NEED_KEYWORDS = [
+        ("housing", [
+            # English
+            "shelter", "place to stay", "nowhere to live", "homeless",
+            "housing", "place to sleep", "bed for the night", "roof",
+            # Spanish
+            "vivienda", "techo", "albergue", "donde dormir", "donde quedarme",
+            "sin casa", "en la calle",
+        ]),
+        ("benefits", [
+            # English
+            "snap", "food stamps", "medicaid", "tanf", "benefits", "food",
+            "ssi", "ssdi", "social security",
+            # Spanish
+            "estampillas", "comida", "alimentos", "beneficios",
+            "seguridad social", "medicaid", "ayuda alimentaria",
+        ]),
+        ("employment", [
+            "job", "work", "hire", "employment", "career", "fair chance",
+            "trabajo", "empleo", "contratar", "contratacion", "contratación",
+        ]),
+        ("id_documents", [
+            "id ", "state id", "social security card", "driver's license",
+            "driver license", "license back", "birth certificate",
+            "identificacion", "identificación", "id de texas", "licencia",
+            "tarjeta", "acta", "certificado",
+        ]),
+        ("record_clearing", [
+            "expunge", "expunction", "non-disclosure", "seal", "clear my record",
+            "background check",
+            "borrar", "limpiar", "antecedentes", "sellar", "expurgar",
+        ]),
+        ("legal_question", [
+            "can i ", "am i eligible", "rule", "law", "right",
+            "puedo ", "tengo derecho", "es legal", "ley",
+        ]),
+        ("parole_reporting", [
+            "parole officer", "po appointment", "report to parole",
+            "miss my report", "missed my report",
+            "oficial de libertad", "oficial po", "reportarme",
+        ]),
+    ]
+
+    needs: list[str] = []
+    for category, keywords in NEED_KEYWORDS:
+        if any(k in msg for k in keywords):
+            needs.append(category)
+    top_need = needs[0] if needs else "unknown"
+    secondary_needs = needs[1:] if len(needs) > 1 else []
 
     region = None
     city = None
@@ -205,23 +252,30 @@ def _heuristic_extract(user_message: str) -> dict:
         city = "San Antonio"; region = "San Antonio"
     elif "el paso" in msg:
         city = "El Paso"; region = "El Paso"
+    elif "brownsville" in msg or "mcallen" in msg or "harlingen" in msg:
+        region = "Lower Rio Grande Valley"
 
     supervision = "unknown"
-    if "parole" in msg:
+    if "parole" in msg or "libertad condicional" in msg:
         supervision = "parole"
-    elif "probation" in msg:
+    elif "probation" in msg or "probatoria" in msg:
         supervision = "probation"
 
+    # Light language inference for heuristic-only mode. The dedicated
+    # detector in pathways/i18n/detect.py is the better path; this is
+    # the fallback when the detector hasn't been called yet.
+    from pathways.i18n.detect import detect_language
+
     return {
-        "name": None,  # the heuristic extractor never tries to pull a name
-        "top_need": need,
-        "secondary_needs": [],
+        "name": None,
+        "top_need": top_need,
+        "secondary_needs": secondary_needs,
         "zipcode": None,
         "city": city,
         "region": region,
         "supervision_status": supervision,
-        "veteran": True if "veteran" in msg else None,
-        "language": "es" if "español" in msg or "ayuda" in msg else "en",
+        "veteran": True if any(v in msg for v in ("veteran", "veterano")) else None,
+        "language": detect_language(user_message),
         "age_range": None,
         "prison_facility": None,
     }
@@ -310,9 +364,15 @@ def _merge_into_profile(
     if extracted.get("veteran") is not None and profile.veteran is None:
         profile.veteran = bool(extracted["veteran"])
 
-    if extracted.get("language") in ("en", "es") and profile.language == "en":
-        # Default is en; only upgrade to es on positive signal, never downgrade
-        if extracted["language"] == "es":
+    # Language: default is en. Two paths can upgrade to es:
+    #   1. The extractor (LLM or heuristic) returns "es"
+    #   2. The dedicated detector in pathways/i18n/detect.py flags Spanish
+    # Either is enough. Once a profile is set to es, never downgrade to en
+    # mid-conversation just because one turn happened to be in English
+    # (it's normal for bilingual users to mix).
+    if profile.language == "en":
+        from pathways.i18n.detect import detect_language
+        if extracted.get("language") == "es" or detect_language(state.user_message) == "es":
             profile.language = "es"
 
     if extracted.get("age_range") and not profile.age_range:

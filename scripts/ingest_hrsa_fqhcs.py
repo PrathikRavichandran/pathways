@@ -77,18 +77,35 @@ def _record_from_row(row: dict) -> dict | None:
         return None
 
     bhcmis = (row.get("BHCMIS Organization Identification Number") or "").strip()
-    site_loc_id = (row.get("Health Center Location Identification Number") or "1").strip()
+    medicare = (row.get("FQHC Site Medicare Billing Number") or "").strip()
     npi = (row.get("FQHC Site NPI Number") or "").strip()
-
-    # Deterministic stable id: bhcmis + site loc id + npi if present.
-    rec_id = f"hrsa-{bhcmis}-{site_loc_id}"
-    if npi:
-        rec_id = f"{rec_id}-{npi}"
 
     address = (row.get("Site Address") or "").strip()
     city = (row.get("Site City") or "").strip()
     zip5 = _parse_zip(row.get("Site Postal Code") or "")
     phone = (row.get("Site Telephone Number") or "").strip()
+
+    # Deterministic stable id PER SITE (not per operator). Previous version
+    # used bhcmis + health-center-location-id, but the "location id" is a
+    # category code shared across every site of an operator (e.g., "1" =
+    # permanent location), which collapsed multiple physical sites of one
+    # FQHC operator into a single row in our DB and cost about half of
+    # HRSA's 832 TX records on the first ingest. Fix: prefer the Medicare
+    # Billing Number (unique per site) when present, fall back to a
+    # deterministic hash of the address fields that uniquely identifies
+    # a physical location.
+    if medicare:
+        rec_id = f"hrsa-mb-{medicare}"
+    elif npi:
+        rec_id = f"hrsa-npi-{npi}"
+    else:
+        import hashlib
+        # bhcmis + address + zip5 is unique to a site in practice; hash to
+        # a short stable string.
+        h = hashlib.sha1(
+            f"{bhcmis}|{address.lower()}|{zip5 or ''}".encode("utf-8")
+        ).hexdigest()[:12]
+        rec_id = f"hrsa-addr-{h}"
     url = (row.get("Site Web Address") or "").strip() or None
     hours = (row.get("Operating Hours per Week") or "").strip()
 

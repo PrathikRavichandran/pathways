@@ -1,5 +1,5 @@
 """
-match node — pulls matching resources from tx-resources MCP server based
+match node: pulls matching resources from tx-resources MCP server based
 on intake.top_need + region. Adds them to state.matched_resources.
 
 Like retrieve.py, this calls the tx-resources tool functions directly in
@@ -18,8 +18,8 @@ from pathways.state import PathwaysState, TopNeed
 def _import_resources_server():
     """Load mcp_servers/tx_resources/server.py under a unique module name.
 
-    See retrieve.py for the rationale — both MCP servers in this repo are
-    named server.py, so plain `import server` collides.
+    See retrieve.py for the rationale (both MCP servers in this repo are
+    named server.py, so plain `import server` collides).
     """
     import importlib.util
     here = os.path.dirname(os.path.abspath(__file__))
@@ -58,84 +58,113 @@ def _need_key(value) -> str:
     return value.value if hasattr(value, "value") else str(value)
 
 
+def _all_needs_ordered(state: PathwaysState) -> list[str]:
+    """Combine top_need + secondary_needs into a unique ordered list.
+    Drops UNKNOWN. Returns canonical order (top first)."""
+    seen: set[str] = set()
+    out: list[str] = []
+    candidates = [state.intake.top_need] + list(state.intake.secondary_needs or [])
+    for c in candidates:
+        key = _need_key(c)
+        if key and key != TopNeed.UNKNOWN.value and key not in seen:
+            seen.add(key)
+            out.append(key)
+    return out
+
+
 def run(state: PathwaysState) -> dict[str, Any]:
     server = _import_resources_server()
-    need_key = _need_key(state.intake.top_need)
-    filters = NEED_TO_FILTERS.get(need_key)
     region = state.intake.region
     zipcode = state.intake.zipcode
 
+    # Phase 3: iterate over EVERY need the intake captured. Dedupe matched
+    # orgs across needs by id so the same FQHC does not appear twice if
+    # it serves both medical AND benefits-enrollment categories. Cap per-
+    # need fetches small so multi-need responses do not blow the SMS
+    # length budget.
+    all_needs = _all_needs_ordered(state)
     matched: list[dict] = []
+    seen_ids: set[str] = set()
 
-    if filters:
+    def _add(orgs: list[dict]) -> None:
+        for o in orgs:
+            if o.get("id") and o["id"] not in seen_ids:
+                seen_ids.add(o["id"])
+                matched.append(o)
+
+    for need_key in all_needs:
+        filters = NEED_TO_FILTERS.get(need_key)
+        if not filters:
+            continue
         category, topic = filters
 
-        # Phase 2: distance-ranked nearby is preferred when the user gave a ZIP.
-        # The nearby call returns both `ranked` (distance-sorted, capped by
-        # max_miles when set) and `fallback` (statewide hotlines for safety).
+        # Distance-ranked nearby (preferred when ZIP is set).
         if zipcode:
             try:
                 near = server.find_resources_nearby(
-                    near_zip=zipcode,
-                    category=category,
-                    top_k=5,
+                    near_zip=zipcode, category=category, top_k=3,
                 )
-                matched.extend(near.get("ranked", []))
-                # Save the safety-net fallback for the always-include block below.
+                _add(near.get("ranked", []))
             except Exception:
                 pass
 
-        # Region-substring filter as the secondary path. Catches orgs that the
-        # nearby ranker missed (e.g., the seed JSON statewide entries that
-        # have no lat/lon but do carry a `regions` tag matching the user's metro).
-        if not matched:
+        # Region-substring filter; catches statewide entries with `regions` tag.
+        if region:
             try:
                 result = server.find_resources(category=category, region=region)
-                matched.extend(result.get("results", []))
+                _add(result.get("results", []))
             except Exception:
                 pass
 
-        # Drop the region filter when nothing matches regionally.
-        if not matched:
-            try:
-                result = server.find_resources(category=category)
-                matched.extend(result.get("results", []))
-            except Exception:
-                pass
-
-        # Topic fallback if category was too narrow
-        if not matched and topic:
-            try:
-                result = server.find_resources(topic=topic)
-                matched.extend(result.get("results", []))
-            except Exception:
-                pass
-
-    # Always include 211 Texas as a fallback for housing/benefits
-    if state.intake.top_need in (TopNeed.HOUSING, TopNeed.BENEFITS, TopNeed.UNKNOWN):
+        # Drop the region filter (still need at least one match per need).
         try:
-            r = server.get_resource("211-texas")
-            if r.get("resource") and not any(
-                m.get("id") == "211-texas" for m in matched
-            ):
-                matched.append(r["resource"])
+            result = server.find_resources(category=category)
+            _add(result.get("results", []))
         except Exception:
             pass
 
-    # Veterans get TVC for employment/legal
-    if state.intake.veteran and state.intake.top_need in (
-        TopNeed.EMPLOYMENT, TopNeed.LEGAL_QUESTION
+        # Topic fallback if category alone was empty.
+        if topic:
+            try:
+                result = server.find_resources(topic=topic)
+                _add(result.get("results", []))
+            except Exception:
+                pass
+
+    # Always include 211 Texas as a fallback for housing/benefits OR when
+    # we still have zero matches (the safety-net invariant: every reply
+    # has at least one phone number the user can call).
+    needs_211 = (
+        TopNeed.HOUSING.value in all_needs
+        or TopNeed.BENEFITS.value in all_needs
+        or not matched
+    )
+    if needs_211:
+        try:
+            r = server.get_resource("211-texas")
+            if r.get("resource") and r["resource"].get("id") not in seen_ids:
+                matched.append(r["resource"])
+                seen_ids.add(r["resource"]["id"])
+        except Exception:
+            pass
+
+    # Veterans get TVC when employment or legal is among their needs.
+    if state.intake.veteran and (
+        TopNeed.EMPLOYMENT.value in all_needs
+        or TopNeed.LEGAL_QUESTION.value in all_needs
     ):
         try:
             r = server.get_resource("tx-veterans-commission")
-            if r.get("resource") and not any(
-                m.get("id") == "tx-veterans-commission" for m in matched
-            ):
+            if r.get("resource") and r["resource"].get("id") not in seen_ids:
                 matched.append(r["resource"])
+                seen_ids.add(r["resource"]["id"])
         except Exception:
             pass
 
+    # Cap matched resources at 6 to keep responses SMS-segmented friendly.
+    # Multi-need users get more diverse coverage; single-need users get the
+    # top regional matches.
     return {
-        "matched_resources": matched[:6],  # cap to prevent choice paralysis
+        "matched_resources": matched[:6],
         "next_node": "draft",
     }
