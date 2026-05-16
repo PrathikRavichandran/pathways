@@ -63,24 +63,46 @@ def run(state: PathwaysState) -> dict[str, Any]:
     need_key = _need_key(state.intake.top_need)
     filters = NEED_TO_FILTERS.get(need_key)
     region = state.intake.region
+    zipcode = state.intake.zipcode
 
     matched: list[dict] = []
 
     if filters:
         category, topic = filters
-        # Category first (higher recall)
-        try:
-            result = server.find_resources(category=category, region=region)
-            matched.extend(result.get("results", []))
-        except Exception:
-            pass
-        # If no region-specific matches, drop the region filter
+
+        # Phase 2: distance-ranked nearby is preferred when the user gave a ZIP.
+        # The nearby call returns both `ranked` (distance-sorted, capped by
+        # max_miles when set) and `fallback` (statewide hotlines for safety).
+        if zipcode:
+            try:
+                near = server.find_resources_nearby(
+                    near_zip=zipcode,
+                    category=category,
+                    top_k=5,
+                )
+                matched.extend(near.get("ranked", []))
+                # Save the safety-net fallback for the always-include block below.
+            except Exception:
+                pass
+
+        # Region-substring filter as the secondary path. Catches orgs that the
+        # nearby ranker missed (e.g., the seed JSON statewide entries that
+        # have no lat/lon but do carry a `regions` tag matching the user's metro).
+        if not matched:
+            try:
+                result = server.find_resources(category=category, region=region)
+                matched.extend(result.get("results", []))
+            except Exception:
+                pass
+
+        # Drop the region filter when nothing matches regionally.
         if not matched:
             try:
                 result = server.find_resources(category=category)
                 matched.extend(result.get("results", []))
             except Exception:
                 pass
+
         # Topic fallback if category was too narrow
         if not matched and topic:
             try:
