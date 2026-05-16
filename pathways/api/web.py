@@ -36,6 +36,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from pathways.dashboard import analytics as dashboard_analytics
 from pathways.graph import get_app
 from pathways.sessions import (
     thread_id_for_web,
@@ -241,17 +242,36 @@ def _invoke_graph(
         "crisis": crisis,
         "channel": "web",
     }
+    final: Any = None
     try:
         final = app.invoke(input_state, config=config)
     except Exception as exc:
         logger.exception("graph invocation failed: %s", exc)
-        return {
+        final = {
             "final_response": (
                 "I hit a snag. For anything urgent call 211 (any phone, 24/7). "
                 "Try me again in a minute."
             ),
             "intake": {"language": "en"},
         }
+
+    # Caseworker dashboard analytics. Never raises (record_turn swallows
+    # its own exceptions); analytics must not affect the user response path.
+    try:
+        reply_text = ""
+        if isinstance(final, dict):
+            reply_text = str(final.get("final_response") or "")
+        event = dashboard_analytics.event_from_state(
+            final_state=final,
+            thread_id=thread_id,
+            channel="web",
+            user_message=user_message,
+            reply=reply_text,
+            crisis_fired=bool(crisis.fired),
+        )
+        dashboard_analytics.record_turn(event)
+    except Exception:
+        logger.exception("dashboard analytics write failed (non-fatal)")
 
     if hasattr(final, "model_dump"):
         return final.model_dump(mode="json")

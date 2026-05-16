@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1F4A2C" />
+  <title>Pathways · Caseworker dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            forest: { 50:'#EEF6EF',100:'#D5EAD8',200:'#ACD2B0',300:'#7AB182',400:'#4A8E55',500:'#2F6A39',600:'#1F4A2C',700:'#173B22',800:'#133018',900:'#0C1F0F'},
+            marigold:{50:'#FEF6E0',100:'#FCEAB4',200:'#F8D374',300:'#F2C04A',400:'#ECB13B',500:'#D89C24',600:'#B07E15',700:'#83610F'},
+            cream:  { 50:'#FDFBF2',100:'#FAF6E8',200:'#F2EBD4',300:'#E8DCBC',400:'#D5C490'},
+            ink:    { 50:'#F5F4F2',100:'#E6E4DF',200:'#C7C3BA',300:'#9A958B',400:'#6E6A62',500:'#4A4742',600:'#332F2B',700:'#22201D',800:'#16140F',900:'#0C0A07'},
+          },
+          fontFamily: {
+            sans: ['"Inter"','system-ui','-apple-system','sans-serif'],
+            display:['"Fraunces"','ui-serif','Georgia','serif'],
+          },
+          boxShadow: {
+            soft: '0 1px 2px rgba(12,10,7,0.04), 0 4px 12px rgba(12,10,7,0.04)',
+            lift: '0 4px 8px rgba(12,10,7,0.06), 0 12px 24px rgba(12,10,7,0.08)',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    .bg-warmth {
+      background:
+        radial-gradient(1200px 600px at 0% -10%, rgba(236,177,59,0.10), transparent 60%),
+        radial-gradient(900px 600px at 100% 0%, rgba(31,74,44,0.08), transparent 60%),
+        #FAF6E8;
+    }
+    .bar { background-color: #ECB13B; }
+  </style>
+</head>
+<body class="bg-warmth min-h-screen text-ink-700">
+  <header class="border-b border-cream-300 bg-cream-50/85 backdrop-blur sticky top-0 z-10">
+    <div class="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <svg viewBox="0 0 256 256" width="36" height="36" aria-hidden="true">
+          <rect width="256" height="256" rx="56" fill="#1F4A2C"/>
+          <circle cx="128" cy="84" r="38" fill="#ECB13B" opacity="0.18"/>
+          <line x1="56" y1="206" x2="200" y2="206" stroke="#FAF6E8" stroke-width="4" stroke-linecap="round" opacity="0.45"/>
+          <path d="M 128 206 L 128 92" stroke="#FAF6E8" stroke-width="8" stroke-linecap="round"/>
+          <path d="M 128 156 C 100 152, 76 132, 70 100 C 100 110, 124 128, 128 156 Z" fill="#FAF6E8"/>
+          <path d="M 128 140 C 156 136, 180 116, 186 84 C 156 94, 132 112, 128 140 Z" fill="#FAF6E8"/>
+          <circle cx="128" cy="84" r="14" fill="#ECB13B"/>
+        </svg>
+        <div>
+          <div class="font-display text-2xl font-semibold tracking-tight leading-none">Pathways</div>
+          <div class="text-xs text-ink-400 uppercase tracking-widest mt-1">Caseworker dashboard</div>
+        </div>
+      </div>
+      <div class="text-right">
+        <div class="text-sm font-semibold">{{ partner_name }}</div>
+        <div class="text-xs text-ink-400">
+          {% if is_superuser %}all regions · superuser{% else %}{% set ws = scope.get('workforce_regions') or [] %}{% set cs = scope.get('counties') or [] %}{% set rs = scope.get('regions') or [] %}{{ (ws + rs + cs)|join(' · ') or 'unscoped' }}{% endif %}
+          · last {{ days }} day{{ '' if days == 1 else 's' }}
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-6 py-8 space-y-8">
+
+    {# ---------------- summary cards ---------------- #}
+    <section>
+      <h2 class="font-display text-lg font-semibold mb-3 text-ink-600">Activity at a glance</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {% set s = summary %}
+        {% for label, value in [
+          ('Conversations', s.distinct_threads),
+          ('Turns', s.total_turns),
+          ('Escalations', s.escalated),
+          ('Crisis flags', s.crisis_fired),
+          ('Spanish share', '%.0f%%'|format((s.spanish_share or 0) * 100)),
+          ('Avg confidence', '%.2f'|format(s.avg_retrieval_confidence)),
+          ('Resources matched', s.matched_resources_total),
+          ('Window', '%d day%s'|format(s.window_days, '' if s.window_days == 1 else 's')),
+        ] %}
+        <div class="rounded-2xl border border-cream-300 bg-cream-50 shadow-soft p-4">
+          <div class="text-xs uppercase tracking-wider text-ink-400">{{ label }}</div>
+          <div class="font-display text-2xl font-semibold mt-1">{{ value }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# ---------------- needs by region ---------------- #}
+    <section>
+      <h2 class="font-display text-lg font-semibold mb-3 text-ink-600">Needs by region</h2>
+      <div class="rounded-2xl border border-cream-300 bg-cream-50 shadow-soft overflow-hidden">
+        {% if needs_rows %}
+        <table class="w-full text-sm">
+          <thead class="bg-cream-100 text-ink-500 text-xs uppercase tracking-wider">
+            <tr>
+              <th class="text-left px-4 py-2">Region</th>
+              <th class="text-left px-4 py-2">Need</th>
+              <th class="text-right px-4 py-2">Count</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for row in needs_rows %}
+            <tr class="border-t border-cream-200">
+              <td class="px-4 py-2">{{ row.region }}</td>
+              <td class="px-4 py-2 capitalize">{{ row.need.replace('_', ' ') }}</td>
+              <td class="px-4 py-2 text-right tabular-nums">{{ row.count }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="px-4 py-10 text-center text-ink-400 text-sm">
+          No conversations in the window yet.
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    {# ---------------- retrieval confidence ---------------- #}
+    <section>
+      <h2 class="font-display text-lg font-semibold mb-3 text-ink-600">Retrieval confidence distribution</h2>
+      <div class="rounded-2xl border border-cream-300 bg-cream-50 shadow-soft p-4">
+        {% if confidence_bins %}
+          {% set maxc = (confidence_bins | map(attribute='count') | max) or 1 %}
+          <div class="space-y-2">
+          {% for b in confidence_bins %}
+            <div class="flex items-center gap-3 text-sm">
+              <div class="w-16 text-right tabular-nums text-ink-500">{{ '%.2f'|format(b.bin_low) }}–{{ '%.2f'|format(b.bin_high) }}</div>
+              <div class="flex-1 h-3 bg-cream-200 rounded-full overflow-hidden">
+                <div class="bar h-3" style="width: {{ (b.count / maxc) * 100 }}%"></div>
+              </div>
+              <div class="w-12 text-right tabular-nums text-ink-500">{{ b.count }}</div>
+            </div>
+          {% endfor %}
+          </div>
+          <div class="mt-3 text-xs text-ink-400">
+            The confidence floor is 0.62 (PATHWAYS_CONFIDENCE_FLOOR). Bars to the
+            left of that threshold trigger a human handoff instead of a citation.
+          </div>
+        {% else %}
+          <div class="text-center text-ink-400 text-sm">No retrievals in the window.</div>
+        {% endif %}
+      </div>
+    </section>
+
+    {# ---------------- escalation reasons ---------------- #}
+    {% if escalations %}
+    <section>
+      <h2 class="font-display text-lg font-semibold mb-3 text-ink-600">Escalation reasons</h2>
+      <div class="rounded-2xl border border-cream-300 bg-cream-50 shadow-soft overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-cream-100 text-ink-500 text-xs uppercase tracking-wider">
+            <tr>
+              <th class="text-left px-4 py-2">Reason</th>
+              <th class="text-right px-4 py-2">Count</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for row in escalations %}
+            <tr class="border-t border-cream-200">
+              <td class="px-4 py-2 font-mono text-xs">{{ row.reason }}</td>
+              <td class="px-4 py-2 text-right tabular-nums">{{ row.count }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+
+    {# ---------------- recent (anonymized) ---------------- #}
+    <section>
+      <h2 class="font-display text-lg font-semibold mb-3 text-ink-600">Recent conversations (anonymized)</h2>
+      <p class="text-xs text-ink-400 mb-3">
+        Thread IDs are the truncated SHA-256 hash of the salted phone number.
+        No phone numbers, names, ZIPs, or message bodies are stored or shown.
+      </p>
+      <div class="rounded-2xl border border-cream-300 bg-cream-50 shadow-soft overflow-hidden">
+        {% if recent %}
+        <table class="w-full text-sm">
+          <thead class="bg-cream-100 text-ink-500 text-xs uppercase tracking-wider">
+            <tr>
+              <th class="text-left px-4 py-2">Thread</th>
+              <th class="text-left px-4 py-2">When</th>
+              <th class="text-left px-4 py-2">Channel</th>
+              <th class="text-left px-4 py-2">Region</th>
+              <th class="text-left px-4 py-2">Needs</th>
+              <th class="text-left px-4 py-2">Lang</th>
+              <th class="text-left px-4 py-2">Verdict</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for r in recent %}
+            <tr class="border-t border-cream-200 {% if r.crisis_fired %}bg-marigold-50{% endif %}">
+              <td class="px-4 py-2 font-mono text-xs">{{ r.thread_id_display }}</td>
+              <td class="px-4 py-2 text-ink-500 text-xs">{{ r.created_at }}</td>
+              <td class="px-4 py-2 text-xs">{{ r.channel or '-' }}</td>
+              <td class="px-4 py-2 text-xs">{{ r.region or '-' }}</td>
+              <td class="px-4 py-2 text-xs capitalize">{{ (r.needs or [])|join(', ')|replace('_', ' ') or '-' }}</td>
+              <td class="px-4 py-2 text-xs uppercase">{{ r.language or '-' }}</td>
+              <td class="px-4 py-2 text-xs">
+                {% if r.crisis_fired %}<span class="font-semibold text-marigold-700">crisis</span>
+                {% elif r.escalated %}<span class="text-marigold-600">escalated</span>
+                {% else %}{{ r.audit_verdict or '-' }}{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="px-4 py-10 text-center text-ink-400 text-sm">
+          No recent activity to show.
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <footer class="text-center text-xs text-ink-400 pt-6">
+      Pathways · read-only dashboard · all PII scrubbed at the write layer
+    </footer>
+  </main>
+</body>
+</html>

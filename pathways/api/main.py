@@ -37,6 +37,8 @@ from pydantic import BaseModel
 
 from pathways.api.twilio_signature import verify_twilio_signature
 from pathways.api.web import router as web_router
+from pathways.dashboard import analytics as dashboard_analytics
+from pathways.dashboard.app import router as dashboard_router
 from pathways.graph import get_app
 from pathways.sessions import (
     seen_message_sid,
@@ -91,6 +93,9 @@ api.add_middleware(
 # Mount the web channel router. Sibling to /sms; the PWA hits these endpoints.
 api.include_router(web_router)
 
+# Mount the caseworker dashboard router (read-only, token-gated).
+api.include_router(dashboard_router)
+
 
 # ---------------------------------------------------------------------------
 # Health
@@ -101,9 +106,10 @@ api.include_router(web_router)
 def health() -> dict:
     return {
         "status": "ok",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "checkpoint_backend": os.environ.get("PATHWAYS_CHECKPOINT_BACKEND", "memory"),
         "channels": ["sms", "web"],
+        "modules": ["dashboard"],
     }
 
 
@@ -350,6 +356,7 @@ async def _invoke_graph(
         "channel": channel,
     }
 
+    final: Any = None
     try:
         final = app.invoke(input_state, config=config)
         if isinstance(final, dict):
@@ -359,6 +366,24 @@ async def _invoke_graph(
     except Exception as exc:
         logger.exception("Graph invocation failed: %s", exc)
         reply = _fallback_reply()
+
+    # Analytics: record a PII-scrubbed turn event for the caseworker
+    # dashboard. Never raises (record_turn swallows its own exceptions);
+    # analytics must not affect the user-facing response path.
+    try:
+        if final is not None:
+            event = dashboard_analytics.event_from_state(
+                final_state=final,
+                thread_id=thread_id,
+                channel=channel,
+                user_message=user_message,
+                reply=reply,
+                crisis_fired=bool(crisis.fired),
+            )
+            dashboard_analytics.record_turn(event)
+    except Exception:
+        logger.exception("dashboard analytics write failed (non-fatal)")
+
     return reply
 
 
