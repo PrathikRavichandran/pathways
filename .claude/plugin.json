@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "pathways",
+  "version": "0.1.0",
+  "description": "Texas reentry navigator — composable Claude Code architecture: 7 progressive-disclosure Skills, 4 capability-scoped sub-agents, 3 deterministic safety hooks, and 2 domain-bounded MCP servers. Built as a safety-critical reference architecture.",
+  "author": "Prathik Ravichandran <prathik.ravichandran.work@gmail.com>",
+  "homepage": "https://github.com/PrathikRavichandran/pathways",
+  "repository": "https://github.com/PrathikRavichandran/pathways",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "skills",
+    "sub-agents",
+    "hooks",
+    "mcp",
+    "reentry",
+    "rag",
+    "langgraph",
+    "compliance",
+    "safety-critical"
+  ],
+  "skills": [
+    "skills/intake-assessment",
+    "skills/niccc-lookup",
+    "skills/housing-pathway",
+    "skills/employment-pathway",
+    "skills/record-clearing-tx",
+    "skills/benefits-navigator",
+    "skills/crisis-response"
+  ],
+  "agents": [
+    "agents/compliance-auditor.md",
+    "agents/eligibility-checker.md",
+    "agents/resource-matcher.md",
+    "agents/caseload-summarizer.md"
+  ],
+  "hooks": [
+    "hooks/crisis_keyword_check.py",
+    "hooks/pii_redact.py",
+    "hooks/rag_confidence_gate.py"
+  ],
+  "settings": "settings.json",
+  "rules": [
+    "rules/citations.md",
+    "rules/compliance.md",
+    "rules/tone-and-trauma-informed.md"
+  ],
+  "mcp": {
+    "servers": [
+      {
+        "name": "pathways-corpus",
+        "transport": "stdio",
+        "command": "python",
+        "args": ["mcp_servers/pathways_corpus/server.py"],
+        "description": "BM25 retrieval over a curated corpus of TX statutory citations + NICCC collateral consequences. Returns confidence-scored results gated by the rag_confidence_gate hook."
+      },
+      {
+        "name": "tx-resources",
+        "transport": "stdio",
+        "command": "python",
+        "args": ["mcp_servers/tx_resources/server.py"],
+        "description": "Region-aware directory of Texas reentry organizations (legal aid, workforce, housing, benefits, ID). Each record carries phone, URL, eligibility, and verification date."
+      }
+    ]
+  },
+  "scripts": {
+    "test": "pytest -v",
+    "demo": "python -m pathways.api"
+  },
+  "engines": {
+    "claude-code": ">=1.0.0",
+    "python": ">=3.11"
+  }
+}

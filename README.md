@@ -12,11 +12,37 @@ short_description: AI navigator for post-incarceration reentry in Texas
 
 # Pathways
 
-A conversational AI navigator for people leaving incarceration in Texas. Built as a Claude Code architecture: layered Skills, sub-agents, hooks, and MCP servers composed into one reliable workflow.
+[![CI](https://github.com/PrathikRavichandran/pathways/actions/workflows/ci.yml/badge.svg)](https://github.com/PrathikRavichandran/pathways/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-30%2F30%20passing-brightgreen)](https://github.com/PrathikRavichandran/pathways/actions)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![HF Space](https://img.shields.io/badge/%F0%9F%A4%97%20HF%20Space-live-yellow)](https://prathik10-pathways.hf.space/docs)
 
-This repo is both a real product-in-progress and an opinionated demonstration of how Claude Code's primitives compose for a domain where wrong answers cause real harm — legal misinformation, missed deadlines, lost benefits, or a missed crisis signal.
+A conversational AI navigator for people leaving incarceration in Texas. Built as a Claude Code architecture: layered **Skills**, **sub-agents**, **hooks**, **MCP servers**, **settings**, and a distributable **plugin** — composed into one reliable workflow for a safety-critical domain.
 
-> **Status:** Active development. The architecture is complete and the demo flow runs end-to-end against real Texas statutory data. Tests: **30/30 passing** (hooks + LangGraph end-to-end across 6 conversation paths). Twilio dispatch and live Pinecone are stubbed behind interfaces and documented in `docs/ARCHITECTURE.md`.
+This repo is both a real product-in-progress *and* an opinionated demonstration of how Claude Code primitives compose when wrong answers cause real harm — legal misinformation, missed deadlines, lost benefits, or a missed crisis signal.
+
+> **Status:** Active development. The architecture is complete and the demo flow runs end-to-end against real Texas statutory data. Tests: **30/30 passing** (hooks + LangGraph end-to-end across 6 conversation paths). Twilio dispatch and live Pinecone are stubbed behind interfaces and documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+---
+
+## ⚡ Try it in 30 seconds
+
+| Surface | URL | Try this |
+|---|---|---|
+| 🩺 **API health** | <https://prathik10-pathways.hf.space/health> | Returns `{"status":"ok","version":"0.1.0"}` |
+| 📚 **OpenAPI / Swagger** | <https://prathik10-pathways.hf.space/docs> | Interactive — try `/_debug/invoke` with `{"message":"Can I vote in Texas if I'm on parole?"}` |
+| 🧠 **Architecture deep-dive** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Why each Claude Code primitive is load-bearing in a safety-critical domain |
+| 🎬 **Per-primitive walkthrough** | [`docs/SHOWCASE.md`](docs/SHOWCASE.md) | Code-trace tour: see exactly what a Skill, sub-agent, hook, and MCP server look like in practice |
+| 💬 **Sample conversations** | [`examples/sample_conversations.md`](examples/sample_conversations.md) | 5 fully-annotated SMS dialogues end-to-end (housing crisis, voting eligibility, multi-need, etc.) |
+
+### Install as a Claude Code plugin (loads all 7 Skills + 4 sub-agents + 3 hooks into your own session)
+
+```bash
+git clone https://github.com/PrathikRavichandran/pathways.git
+cd pathways && claude plugin install .
+```
+
+Then open any Claude Code session and ask a Texas-reentry question — the right Skill auto-loads, the safety hooks fire, the `compliance-auditor` sub-agent audits the response, and the MCP servers serve the corpus + resources. No model setup, no infra. The `.claude/plugin.json` manifest is the recruiter's quickest path to "this person actually shipped something I can install and run."
 
 ---
 
