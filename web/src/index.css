@@ -4,14 +4,14 @@
 
 :root {
   color-scheme: light dark;
-  --surface: #FAF7F2;
-  --surface-elev: #FDFBF7;
-  --border: #E8E0D2;
+  --surface: #FAF6E8;
+  --surface-elev: #FDFBF2;
+  --border: #E8DCBC;
   --text: #22201D;
   --text-muted: #6E6A62;
-  --primary: #0D5C4F;
-  --primary-hover: #0A4A40;
-  --accent: #E08566;
+  --primary: #1F4A2C;
+  --primary-hover: #173B22;
+  --accent: #ECB13B;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,9 +21,9 @@
     --border: #332F2B;
     --text: #F5F4F2;
     --text-muted: #9A958B;
-    --primary: #3F9C82;
-    --primary-hover: #6FBBA4;
-    --accent: #EC8E70;
+    --primary: #4A8E55;
+    --primary-hover: #7AB182;
+    --accent: #F2C04A;
   }
 }
 
@@ -56,15 +56,15 @@ body,
 /* Soft warm gradient backdrop on light mode */
 .bg-warmth {
   background:
-    radial-gradient(1200px 600px at 0% -10%, rgba(224, 133, 102, 0.10), transparent 60%),
-    radial-gradient(900px 600px at 100% 0%, rgba(13, 92, 79, 0.08), transparent 60%),
+    radial-gradient(1200px 600px at 0% -10%, rgba(236, 177, 59, 0.10), transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, rgba(31, 74, 44, 0.08), transparent 60%),
     var(--surface);
 }
 @media (prefers-color-scheme: dark) {
   .bg-warmth {
     background:
-      radial-gradient(1200px 600px at 0% -10%, rgba(236, 142, 112, 0.10), transparent 60%),
-      radial-gradient(900px 600px at 100% 0%, rgba(63, 156, 130, 0.10), transparent 60%),
+      radial-gradient(1200px 600px at 0% -10%, rgba(242, 192, 74, 0.10), transparent 60%),
+      radial-gradient(900px 600px at 100% 0%, rgba(74, 142, 85, 0.10), transparent 60%),
       var(--surface);
   }
 }

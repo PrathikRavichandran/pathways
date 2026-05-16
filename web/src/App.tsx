@@ -284,7 +284,7 @@ function WelcomeScreen({
         </motion.div>
         <motion.p
           {...fadeIn(0.05)}
-          className="text-xs font-medium uppercase tracking-[0.18em] text-teal-600 dark:text-teal-300"
+          className="text-xs font-medium uppercase tracking-[0.18em] text-forest-600 dark:text-forest-300"
         >
           {t("welcome_eyebrow", lang)}
         </motion.p>
@@ -307,7 +307,7 @@ function WelcomeScreen({
         >
           <button
             onClick={() => onStart()}
-            className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-teal-600 px-6 py-3.5 text-base font-semibold text-cream-50 shadow-lift transition hover:bg-teal-700 active:translate-y-px dark:bg-teal-500 dark:hover:bg-teal-400"
+            className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-forest-600 px-6 py-3.5 text-base font-semibold text-cream-50 shadow-lift transition hover:bg-forest-700 active:translate-y-px dark:bg-forest-500 dark:hover:bg-forest-400"
           >
             {t("welcome_cta", lang)}
             <span
@@ -328,7 +328,7 @@ function WelcomeScreen({
               <button
                 key={q.key}
                 onClick={() => onStart(q.text)}
-                className="rounded-full border border-cream-300 bg-cream-50/80 px-4 py-2 text-sm font-medium text-ink-600 shadow-soft transition hover:border-teal-400 hover:bg-cream-50 hover:text-teal-700 dark:border-ink-600 dark:bg-ink-800/60 dark:text-cream-200 dark:hover:border-teal-400 dark:hover:text-teal-300"
+                className="rounded-full border border-cream-300 bg-cream-50/80 px-4 py-2 text-sm font-medium text-ink-600 shadow-soft transition hover:border-forest-400 hover:bg-cream-50 hover:text-forest-700 dark:border-ink-600 dark:bg-ink-800/60 dark:text-cream-200 dark:hover:border-forest-400 dark:hover:text-forest-300"
               >
                 {q.text}
               </button>
@@ -414,7 +414,7 @@ const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Compose
   return (
     <footer className="pb-safe fixed inset-x-0 bottom-0 z-20 border-t border-cream-200/80 bg-cream-50/85 backdrop-blur-md dark:border-ink-700 dark:bg-ink-900/85">
       <div className="mx-auto flex max-w-2xl items-end gap-2 px-3 pb-3 pt-3 sm:px-4">
-        <div className="flex-1 rounded-3xl border border-cream-300 bg-cream-50 px-4 py-2 shadow-soft transition focus-within:border-teal-500 focus-within:ring-4 focus-within:ring-teal-500/15 dark:border-ink-700 dark:bg-ink-800">
+        <div className="flex-1 rounded-3xl border border-cream-300 bg-cream-50 px-4 py-2 shadow-soft transition focus-within:border-forest-500 focus-within:ring-4 focus-within:ring-forest-500/15 dark:border-ink-700 dark:bg-ink-800">
           <textarea
             ref={ref}
             value={value}
@@ -439,7 +439,7 @@ const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Compose
           onClick={onSend}
           disabled={disabled || !value.trim()}
           aria-label={t("send", lang)}
-          className="shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-cream-50 shadow-lift transition hover:bg-teal-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-cream-300 disabled:text-ink-300 dark:bg-teal-500 dark:hover:bg-teal-400 dark:disabled:bg-ink-700 dark:disabled:text-ink-400"
+          className="shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-full bg-forest-600 text-cream-50 shadow-lift transition hover:bg-forest-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-cream-300 disabled:text-ink-300 dark:bg-forest-500 dark:hover:bg-forest-400 dark:disabled:bg-ink-700 dark:disabled:text-ink-400"
         >
           {sending ? <Spinner /> : <ArrowUp />}
         </button>
@@ -511,7 +511,7 @@ function Header({
     <header className="pt-safe sticky top-0 z-30 border-b border-cream-200/70 bg-cream-50/85 backdrop-blur-md dark:border-ink-700 dark:bg-ink-900/85">
       <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <span className="text-teal-600 dark:text-teal-300">
+          <span className="text-forest-600 dark:text-forest-300">
             <LogoMarkOnSurface size={32} />
           </span>
           <Wordmark className="text-ink-700 dark:text-cream-100" />
@@ -520,7 +520,7 @@ function Header({
           <button
             onClick={onToggleLang}
             aria-label="Toggle language"
-            className="rounded-full border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-teal-400 hover:text-teal-700 dark:border-ink-700 dark:text-cream-200 dark:hover:border-teal-400 dark:hover:text-teal-300"
+            className="rounded-full border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-forest-400 hover:text-forest-700 dark:border-ink-700 dark:text-cream-200 dark:hover:border-forest-400 dark:hover:text-forest-300"
           >
             {lang === "en" ? "ES" : "EN"}
           </button>
@@ -528,7 +528,7 @@ function Header({
             <button
               onClick={onReset}
               aria-label={t("reset", lang)}
-              className="rounded-full border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-teal-400 hover:text-teal-700 dark:border-ink-700 dark:text-cream-200 dark:hover:border-teal-400 dark:hover:text-teal-300"
+              className="rounded-full border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-forest-400 hover:text-forest-700 dark:border-ink-700 dark:text-cream-200 dark:hover:border-forest-400 dark:hover:text-forest-300"
             >
               {t("reset", lang)}
             </button>
@@ -554,7 +554,7 @@ function InstallBanner({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.24 }}
-      className="border-b border-coral-200/60 bg-coral-50/80 px-4 py-2 dark:border-coral-700/40 dark:bg-ink-800/70"
+      className="border-b border-marigold-200/60 bg-marigold-50/80 px-4 py-2 dark:border-marigold-700/40 dark:bg-ink-800/70"
     >
       <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 text-sm">
         <span className="text-ink-700 dark:text-cream-200">
@@ -563,7 +563,7 @@ function InstallBanner({
         <div className="flex items-center gap-2">
           <button
             onClick={onInstall}
-            className="rounded-full bg-coral-500 px-3 py-1.5 text-xs font-semibold text-cream-50 shadow-soft transition hover:bg-coral-600"
+            className="rounded-full bg-marigold-500 px-3 py-1.5 text-xs font-semibold text-cream-50 shadow-soft transition hover:bg-marigold-600"
           >
             {t("install_app", lang)}
           </button>
@@ -581,7 +581,7 @@ function InstallBanner({
 
 function StageBar({ text }: { text: string }) {
   return (
-    <div className="border-b border-teal-200/40 bg-teal-50/60 px-4 py-1.5 text-center text-[11px] font-medium uppercase tracking-wider text-teal-700 dark:border-teal-800/40 dark:bg-ink-800/60 dark:text-teal-300">
+    <div className="border-b border-forest-200/40 bg-forest-50/60 px-4 py-1.5 text-center text-[11px] font-medium uppercase tracking-wider text-forest-700 dark:border-forest-800/40 dark:bg-ink-800/60 dark:text-forest-300">
       {text}
     </div>
   );
@@ -604,7 +604,7 @@ function BubbleView({ bubble, lang }: { bubble: Bubble; lang: Lang }) {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-        className="self-end max-w-[85%] whitespace-pre-wrap rounded-3xl rounded-br-md bg-teal-600 px-4 py-2.5 text-cream-50 shadow-lift dark:bg-teal-500"
+        className="self-end max-w-[85%] whitespace-pre-wrap rounded-3xl rounded-br-md bg-forest-600 px-4 py-2.5 text-cream-50 shadow-lift dark:bg-forest-500"
       >
         {bubble.text}
       </motion.div>
@@ -616,7 +616,7 @@ function BubbleView({ bubble, lang }: { bubble: Bubble; lang: Lang }) {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.24 }}
-        className="self-stretch rounded-2xl border border-coral-300/70 bg-coral-50 px-4 py-3 text-sm text-coral-700 dark:border-coral-700/50 dark:bg-coral-700/15 dark:text-coral-200"
+        className="self-stretch rounded-2xl border border-marigold-300/70 bg-marigold-50 px-4 py-3 text-sm text-marigold-700 dark:border-marigold-700/50 dark:bg-marigold-700/15 dark:text-marigold-200"
       >
         {bubble.text}
       </motion.div>
@@ -700,7 +700,7 @@ function ResourceCardView({
           {tel && (
             <a
               href={`tel:${tel}`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-3.5 py-1.5 text-xs font-semibold text-cream-50 shadow-soft transition hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400"
+              className="inline-flex items-center gap-1.5 rounded-full bg-forest-600 px-3.5 py-1.5 text-xs font-semibold text-cream-50 shadow-soft transition hover:bg-forest-700 dark:bg-forest-500 dark:hover:bg-forest-400"
             >
               <PhoneIcon /> {card.phone}
             </a>
@@ -710,7 +710,7 @@ function ResourceCardView({
               href={card.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-cream-300 px-3.5 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-teal-400 hover:text-teal-700 dark:border-ink-700 dark:text-cream-200 dark:hover:border-teal-400 dark:hover:text-teal-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-cream-300 px-3.5 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-forest-400 hover:text-forest-700 dark:border-ink-700 dark:text-cream-200 dark:hover:border-forest-400 dark:hover:text-forest-300"
             >
               <LinkIcon /> {t("visit", lang)}
             </a>

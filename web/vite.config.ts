@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => {
           short_name: "Pathways",
           description:
             "Conversational navigator for people leaving incarceration in Texas. Housing, food, work, ID, benefits, legal aid.",
-          theme_color: "#0D5C4F",
-          background_color: "#FAF7F2",
+          theme_color: "#1F4A2C",
+          background_color: "#FAF6E8",
           display: "standalone",
           orientation: "portrait",
           scope: "/",
