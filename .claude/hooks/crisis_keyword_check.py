@@ -82,7 +82,8 @@ KEYWORDS = [
      "self_harm"),
 
     # Overdose / acute substance crisis
-    (re.compile(r"\b(overdos(e|ing|ed)|OD'?d|OD'?ing|took\s+too\s+much|"
+    (re.compile(r"\b(overdos(e|ing|ed)|OD'?d|OD'?ing|"
+                r"took\s+too\s+much|took\s+too\s+many\s+(pills?|tablets?|of)|"
                 r"going\s+to\s+overdose|"
                 r"can'?t\s+stop\s+using|been\s+using\s+all\s+(day|night)|"
                 r"shooting\s+up\s+again)\b", re.I),

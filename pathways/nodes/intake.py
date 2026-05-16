@@ -32,7 +32,7 @@ Phase 1 vs Phase 0
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Optional
 
 from pathways.llm import LLMUnavailable, get_llm
 from pathways.state import (
@@ -217,6 +217,8 @@ def _heuristic_extract(user_message: str) -> dict:
         ("parole_reporting", [
             "parole officer", "po appointment", "report to parole",
             "miss my report", "missed my report",
+            "my po", "see my po", "see po", "report to my po", "report to po",
+            "check in with parole", "check-in with parole",
             "oficial de libertad", "oficial po", "reportarme",
         ]),
     ]
@@ -249,6 +251,18 @@ def _heuristic_extract(user_message: str) -> dict:
     elif "probation" in msg or "probatoria" in msg:
         supervision = "probation"
 
+    # ZIP extraction: pick the first 5-digit run that looks like a TX ZIP
+    # (starts with 7). The current state of pathways is TX-only so any
+    # non-TX-looking ZIP we just ignore; the compliance auditor handles
+    # out-of-state messaging separately.
+    zipcode: Optional[str] = None
+    import re as _re
+    for m in _re.finditer(r"(?<!\d)(\d{5})(?!\d)", user_message):
+        candidate = m.group(1)
+        if candidate.startswith("7"):
+            zipcode = candidate
+            break
+
     # Light language inference for heuristic-only mode. The dedicated
     # detector in pathways/i18n/detect.py is the better path; this is
     # the fallback when the detector hasn't been called yet.
@@ -258,7 +272,7 @@ def _heuristic_extract(user_message: str) -> dict:
         "name": None,
         "top_need": top_need,
         "secondary_needs": secondary_needs,
-        "zipcode": None,
+        "zipcode": zipcode,
         "city": city,
         "region": region,
         "supervision_status": supervision,

@@ -1,0 +1,57 @@
+[
+  {
+    "id": "spanish-housing",
+    "category": "spanish",
+    "input": { "message": "Hola, necesito ayuda con vivienda" },
+    "expects": {
+      "needs_contains": ["housing"],
+      "language": "es"
+    },
+    "notes": "Spanish housing request, must route to housing AND set language to es."
+  },
+  {
+    "id": "spanish-food",
+    "category": "spanish",
+    "input": { "message": "Necesito ayuda con comida y estampillas" },
+    "expects": {
+      "needs_contains": ["benefits"],
+      "language": "es"
+    }
+  },
+  {
+    "id": "spanish-employment",
+    "category": "spanish",
+    "input": { "message": "Busco trabajo, quien contrata a alguien con un record" },
+    "expects": {
+      "needs_contains": ["employment"],
+      "language": "es"
+    }
+  },
+  {
+    "id": "spanish-id",
+    "category": "spanish",
+    "input": { "message": "Necesito mi identificacion de Texas" },
+    "expects": {
+      "needs_contains": ["id_documents"],
+      "language": "es"
+    }
+  },
+  {
+    "id": "spanish-record-clearing",
+    "category": "spanish",
+    "input": { "message": "Como puedo limpiar mi record en Texas?" },
+    "expects": {
+      "needs_contains": ["record_clearing"],
+      "language": "es"
+    }
+  },
+  {
+    "id": "spanish-false-positive-single-word",
+    "category": "spanish",
+    "input": { "message": "I need help finding burrito places near me" },
+    "expects": {
+      "language": "en"
+    },
+    "notes": "Single Spanish word in an English sentence should NOT flip language to es per trauma-informed rule."
+  }
+]

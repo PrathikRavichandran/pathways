@@ -1,0 +1,92 @@
+[
+  {
+    "id": "geo-houston-housing",
+    "category": "geo",
+    "input": {
+      "message": "I need a shelter near me",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "77002",
+        "city": "Houston",
+        "region": "Greater Houston",
+        "intake_complete": true
+      }
+    },
+    "expects": {
+      "needs_contains": ["housing"],
+      "resources_min_count": 1
+    },
+    "notes": "Houston ZIP, post-intake. Must return at least one Houston-area org or 211 fallback."
+  },
+  {
+    "id": "geo-rgv-housing",
+    "category": "geo",
+    "input": {
+      "message": "Need a place to stay, I am here in Brownsville",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "78520",
+        "city": "Brownsville",
+        "region": "Lower Rio Grande Valley",
+        "intake_complete": true
+      }
+    },
+    "expects": {
+      "needs_contains": ["housing"],
+      "resources_min_count": 1
+    },
+    "notes": "RGV ZIP. Critical coverage test: was a Phase 2 gap before metro curation."
+  },
+  {
+    "id": "geo-el-paso-employment",
+    "category": "geo",
+    "input": {
+      "message": "I need a job",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "79901",
+        "city": "El Paso",
+        "region": "El Paso",
+        "intake_complete": true
+      }
+    },
+    "expects": {
+      "needs_contains": ["employment"],
+      "resources_min_count": 1
+    }
+  },
+  {
+    "id": "geo-austin-benefits",
+    "category": "geo",
+    "input": {
+      "message": "Can I apply for SNAP",
+      "prefill": {
+        "name": "Eval",
+        "zipcode": "78701",
+        "city": "Austin",
+        "region": "Austin",
+        "intake_complete": true
+      }
+    },
+    "expects": {
+      "needs_contains": ["benefits"],
+      "resources_min_count": 1
+    }
+  },
+  {
+    "id": "geo-no-zip-fallback",
+    "category": "geo",
+    "input": {
+      "message": "I need housing somewhere in Texas, anywhere is fine",
+      "prefill": {
+        "name": "Eval",
+        "intake_complete": true
+      }
+    },
+    "expects": {
+      "needs_contains": ["housing"],
+      "resources_min_count": 1
+    },
+    "notes": "No ZIP given: should still return statewide fallback (211 Texas)."
+  }
+]

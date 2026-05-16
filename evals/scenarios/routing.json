@@ -1,0 +1,83 @@
+[
+  {
+    "id": "routing-housing-en",
+    "category": "routing",
+    "input": { "message": "I just got out and I need a place to stay" },
+    "expects": {
+      "needs_contains": ["housing"],
+      "crisis_must_not_fire": true
+    }
+  },
+  {
+    "id": "routing-housing-shelter-en",
+    "category": "routing",
+    "input": { "message": "I need a shelter near me" },
+    "expects": {
+      "needs_contains": ["housing"]
+    }
+  },
+  {
+    "id": "routing-food-en",
+    "category": "routing",
+    "input": { "message": "Where can I get food stamps?" },
+    "expects": {
+      "needs_contains": ["benefits"]
+    }
+  },
+  {
+    "id": "routing-snap-en",
+    "category": "routing",
+    "input": { "message": "I think I qualify for SNAP, how do I apply" },
+    "expects": {
+      "needs_contains": ["benefits"]
+    }
+  },
+  {
+    "id": "routing-employment-en",
+    "category": "routing",
+    "input": { "message": "I need a job, who hires people with a felony" },
+    "expects": {
+      "needs_contains": ["employment"]
+    }
+  },
+  {
+    "id": "routing-id-en",
+    "category": "routing",
+    "input": { "message": "I need to get my Texas ID back, where do I go" },
+    "expects": {
+      "needs_contains": ["id_documents"]
+    }
+  },
+  {
+    "id": "routing-record-clearing-en",
+    "category": "routing",
+    "input": { "message": "Can I get my felony expunged in Texas?" },
+    "expects": {
+      "needs_contains": ["record_clearing"]
+    }
+  },
+  {
+    "id": "routing-record-non-disclosure-en",
+    "category": "routing",
+    "input": { "message": "How do I file an order of non-disclosure" },
+    "expects": {
+      "needs_contains": ["record_clearing"]
+    }
+  },
+  {
+    "id": "routing-legal-en",
+    "category": "routing",
+    "input": { "message": "I have a court question and need a lawyer" },
+    "expects": {
+      "needs_contains": ["legal_question", "record_clearing"]
+    }
+  },
+  {
+    "id": "routing-parole-en",
+    "category": "routing",
+    "input": { "message": "I have to report to my PO next week and I do not have a ride" },
+    "expects": {
+      "needs_contains": ["parole_reporting"]
+    }
+  }
+]

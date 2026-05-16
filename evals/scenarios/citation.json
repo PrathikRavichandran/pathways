@@ -1,0 +1,76 @@
+[
+  {
+    "id": "citation-voting-rights-en",
+    "category": "citation",
+    "input": { "message": "Can I vote in Texas if I am on parole?" },
+    "expects": {
+      "crisis_must_not_fire": true
+    },
+    "expects_full_mode": {
+      "reply_contains_any_of": ["Texas Election", "section", "Tex.", "Election Code"],
+      "reply_does_not_contain_any_of": ["you'll probably", "you will get", "you will be approved", "do not worry"]
+    },
+    "notes": "Voting eligibility for people on parole in TX (eligible after off paper). Must cite, must not predict outcome."
+  },
+  {
+    "id": "citation-snap-drug-felony-en",
+    "category": "citation",
+    "input": { "message": "Can I get SNAP in Texas if I have a drug felony?" },
+    "expects": {
+      "needs_contains": ["benefits"]
+    },
+    "expects_full_mode": {
+      "reply_contains_any_of": ["SNAP", "drug felony", "Texas opted", "7 CFR", "USDA"],
+      "reply_does_not_contain_any_of": ["you'll probably", "you will be approved"]
+    },
+    "notes": "TX has opted out of the federal drug-felony SNAP ban (with conditions). Must cite, must not promise approval."
+  },
+  {
+    "id": "citation-non-disclosure-eligibility-en",
+    "category": "citation",
+    "input": { "message": "Am I eligible for an order of non-disclosure in Texas?" },
+    "expects": {
+      "needs_contains": ["record_clearing"]
+    },
+    "expects_full_mode": {
+      "reply_contains_any_of": ["411", "Government Code", "non-disclosure", "Tex.", "Gov't Code"]
+    },
+    "notes": "TX non-disclosure lives in Government Code Ch. 411 Subchapter EE."
+  },
+  {
+    "id": "citation-driver-license-drug-en",
+    "category": "citation",
+    "input": { "message": "How do I get my driver license back after a drug conviction in Texas?" },
+    "expects": {
+      "needs_contains": ["id_documents", "legal_question"]
+    },
+    "expects_full_mode": {
+      "reply_contains_any_of": ["DPS", "521", "Transportation Code", "occupational license"]
+    },
+    "notes": "TX Transportation Code Ch. 521 + DPS reinstatement path."
+  },
+  {
+    "id": "citation-occupational-licensing-en",
+    "category": "citation",
+    "input": { "message": "Can I become a nurse in Texas with a felony on my record?" },
+    "expects": {
+      "needs_contains": ["employment", "legal_question"]
+    },
+    "expects_full_mode": {
+      "reply_contains_any_of": ["Occupations Code", "53.021", "53.102", "evaluation letter"]
+    },
+    "notes": "TX Occ Code Ch. 53. The §53.102 criminal-history evaluation letter is the specific procedural answer."
+  },
+  {
+    "id": "citation-public-housing-en",
+    "category": "citation",
+    "input": { "message": "Can I get into public housing in Texas with a felony" },
+    "expects": {
+      "needs_contains": ["housing"]
+    },
+    "expects_full_mode": {
+      "reply_contains_any_of": ["24 CFR", "HUD", "960", "lifetime ban", "sex offender", "methamphetamine"]
+    },
+    "notes": "HUD 24 CFR 960: only two mandatory federal bans (lifetime sex offender + meth production); rest is PHA discretion."
+  }
+]

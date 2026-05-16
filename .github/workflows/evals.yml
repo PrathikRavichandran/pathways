@@ -1,0 +1,48 @@
+name: Evals
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    name: Pathways eval suite (fast mode, deterministic only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run eval suite (fast mode)
+        env:
+          PATHWAYS_CHECKPOINT_BACKEND: memory
+          PATHWAYS_THREAD_SALT: ci-eval-salt
+          PATHWAYS_EVAL_MIN_PASS_RATE: "0.95"
+        run: |
+          python -m evals.runner --json eval-results.json
+        # The runner exits non-zero if:
+        #   - the critical category (crisis) has any miss, OR
+        #   - the overall pass rate drops below PATHWAYS_EVAL_MIN_PASS_RATE.
+
+      - name: Upload eval results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: eval-results.json
+          retention-days: 30

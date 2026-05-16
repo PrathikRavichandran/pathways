@@ -1,0 +1,46 @@
+[
+  {
+    "id": "multineed-housing-and-food-en",
+    "category": "multi_need",
+    "input": { "message": "I need a place to stay AND food, I have nothing" },
+    "expects": {
+      "needs_contains_all": ["housing", "benefits"]
+    },
+    "notes": "Two needs in one message. Was the original Phase 3 motivating case."
+  },
+  {
+    "id": "multineed-food-and-work-en",
+    "category": "multi_need",
+    "input": { "message": "I need food stamps and I need a job" },
+    "expects": {
+      "needs_contains_all": ["benefits", "employment"]
+    }
+  },
+  {
+    "id": "multineed-id-and-housing-en",
+    "category": "multi_need",
+    "input": { "message": "I lost my ID and I have nowhere to live" },
+    "expects": {
+      "needs_contains_all": ["id_documents", "housing"]
+    }
+  },
+  {
+    "id": "multineed-housing-food-work-en",
+    "category": "multi_need",
+    "input": { "message": "I need shelter, food, and a job" },
+    "expects": {
+      "needs_contains_all": ["housing", "benefits", "employment"]
+    },
+    "notes": "Three needs. Multi-need iteration must surface all three pathways."
+  },
+  {
+    "id": "multineed-housing-and-food-es",
+    "category": "multi_need",
+    "input": { "message": "Necesito vivienda y tambien comida" },
+    "expects": {
+      "needs_contains_all": ["housing", "benefits"],
+      "language": "es"
+    },
+    "notes": "Multi-need + Spanish. Tests the Phase 3 bilingual multi-need path."
+  }
+]
