@@ -10,6 +10,7 @@ import {
 import { type Lang, stageHint, t } from "./i18n";
 import { LogoMark, LogoMarkOnSurface, Wordmark } from "./Logo";
 import { MenuButton, MenuDrawer, PageOverlay, type MenuPage } from "./components/Menu";
+import { ResourceMap } from "./components/ResourceMap";
 
 type Bubble =
   | { kind: "user"; text: string; ts: number }
@@ -778,6 +779,10 @@ function BubbleView({ bubble, lang }: { bubble: Bubble; lang: Lang }) {
       </div>
       {bubble.resources.length > 0 && (
         <div className="space-y-2.5">
+          {/* Map view: self-gates on the presence of at least one pin-able
+              resource (anything with non-null lat/lon). Statewide hotlines
+              without coords still appear in the cards list below. */}
+          <ResourceMap cards={bubble.resources} lang={lang} />
           {bubble.resources.map((r, i) => (
             <ResourceCardView key={r.id} card={r} lang={lang} index={i} />
           ))}

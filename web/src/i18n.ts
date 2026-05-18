@@ -92,6 +92,18 @@ export const T = {
   menu_learn: { en: "Understanding reentry", es: "Entendiendo el reingreso" },
   menu_emergency: { en: "Emergency contacts", es: "Contactos de emergencia" },
   menu_privacy: { en: "Privacy & trust", es: "Privacidad y confianza" },
+
+  // Resource map view
+  map_title: { en: "Nearby on the map", es: "Cerca de ti en el mapa" },
+  map_open_in_google_maps: {
+    en: "Open in Google Maps",
+    es: "Abrir en Google Maps",
+  },
+  map_distance_suffix: { en: "mi away", es: "millas" },
+  map_attribution_note: {
+    en: "Map data © OpenStreetMap contributors",
+    es: "Datos del mapa © colaboradores de OpenStreetMap",
+  },
 };
 
 export function t(key: keyof typeof T, lang: Lang): string {
