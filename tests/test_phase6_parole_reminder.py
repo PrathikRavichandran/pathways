@@ -237,6 +237,61 @@ def test_send_does_not_offer_when_supervision_is_unknown():
     assert "intake" not in out
 
 
+def test_escalate_appends_offer_for_parole_user_no_crisis():
+    """Audit hard-block or revision-exhaustion routes the user to
+    escalate, which sets final_response directly and skips send. The
+    parole offer must still reach the user via this path."""
+    from pathways.nodes import escalate as escalate_node
+    from pathways.state import (
+        CrisisSignal, IntakeProfile, PathwaysState, SupervisionStatus,
+        TopNeed,
+    )
+
+    state = PathwaysState(
+        session_id="t1",
+        user_message="I'm on parole and have a check-in next week, need a ride",
+        intake=IntakeProfile(
+            top_need=TopNeed.PAROLE_REPORTING,
+            supervision_status=SupervisionStatus.PAROLE,
+        ),
+        crisis=CrisisSignal(fired=False),
+        escalation_reason="audit_revisions_exhausted",
+    )
+    out = escalate_node.run(state)
+    assert "Reply YES with the date" in out["final_response"]
+    assert out["intake"].parole_reminder_offered is True
+
+
+def test_escalate_does_not_append_offer_during_crisis():
+    """When crisis fired, the escalation is the crisis routing message
+    (988, RAINN, DV hotline, etc). Asking about parole reminders is the
+    wrong moment. Offer must be suppressed."""
+    from pathways.nodes import escalate as escalate_node
+    from pathways.state import (
+        CrisisCategory, CrisisSignal, IntakeProfile, PathwaysState,
+        SupervisionStatus, TopNeed,
+    )
+
+    state = PathwaysState(
+        session_id="t1",
+        user_message="I want to kill myself",
+        intake=IntakeProfile(
+            top_need=TopNeed.PAROLE_REPORTING,
+            supervision_status=SupervisionStatus.PAROLE,
+        ),
+        crisis=CrisisSignal(
+            fired=True,
+            category=CrisisCategory.SUICIDE,
+            raw_message="I want to kill myself",
+        ),
+        escalation_reason="crisis_hook:suicide",
+    )
+    out = escalate_node.run(state)
+    assert "Reply YES" not in out["final_response"]
+    assert "988" in out["final_response"]
+    assert "intake" not in out
+
+
 def test_send_offer_append_is_idempotent():
     """If the draft already contains the offer (defensive guard against
     upstream coincidences), send should not duplicate it."""

@@ -63,8 +63,32 @@ def run(state: PathwaysState) -> dict[str, Any]:
     else:
         msg = GENERIC_ESCALATION
 
-    return {
+    out: dict[str, Any] = {
         "final_response": msg,
         "escalated_to_human": True,
         "next_node": "END",
     }
+
+    # Parole reminder opt-in offer: also append on the escalation path
+    # if supervision=parole. The audit revision loop or a hard-block can
+    # send us here without ever calling send, and we still want the
+    # opt-in offer to reach the user. Skip when crisis fired (the
+    # crisis reply is the wrong moment to ask about reminders).
+    if not state.crisis.fired:
+        from pathways.nodes.draft import (
+            PAROLE_OFFER_MARKER_EN,
+            PAROLE_OFFER_MARKER_ES,
+            append_parole_offer,
+            should_offer_parole_reminder,
+        )
+        if should_offer_parole_reminder(state):
+            language = state.intake.language or "en"
+            msg = append_parole_offer(msg, language=language)
+            out["final_response"] = msg
+            marker = PAROLE_OFFER_MARKER_ES if language == "es" else PAROLE_OFFER_MARKER_EN
+            if marker in msg and not state.intake.parole_reminder_offered:
+                out["intake"] = state.intake.model_copy(
+                    update={"parole_reminder_offered": True}
+                )
+
+    return out

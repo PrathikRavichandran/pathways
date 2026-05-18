@@ -15,10 +15,15 @@
       "crisis_must_not_fire": true
     },
     "expects_full_mode": {
-      "reply_contains_any_of": ["Texas Election", "section", "Tex.", "Election Code", "vote", "parole"],
-      "reply_does_not_contain_any_of": ["you'll probably", "you will get", "you will be approved", "do not worry"]
+      "reply_contains_any_of": [
+        "Texas Election", "Election Code", "vote", "voting", "parole",
+        "navigator", "legal aid", "211", "Lone Star", "TRLA", "Texas RioGrande"
+      ],
+      "reply_does_not_contain_any_of": [
+        "you'll probably", "you will get", "you will be approved", "do not worry"
+      ]
     },
-    "notes": "Voting eligibility for people on parole in TX (eligible after off paper). Must cite, must not predict outcome. Prefill ensures the graph reaches retrieve/draft instead of stalling on intake's name prompt."
+    "notes": "Voting eligibility for people on parole in TX. Two acceptable response shapes: (1) a cited answer when the corpus has the Election Code entry, OR (2) a handoff to legal aid when the rag_confidence_gate fires because the corpus is weak on voting topics. Both responses must avoid outcome promises."
   },
   {
     "id": "citation-snap-drug-felony-en",
