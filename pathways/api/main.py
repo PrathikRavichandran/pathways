@@ -107,7 +107,7 @@ api.include_router(dashboard_router)
 def health() -> dict:
     return {
         "status": "ok",
-        "version": "0.7.0",
+        "version": "1.0.0",
         "checkpoint_backend": os.environ.get("PATHWAYS_CHECKPOINT_BACKEND", "memory"),
         "channels": ["sms", "web"],
         "modules": ["dashboard", "parole_reminders", "writeback", "audit"],

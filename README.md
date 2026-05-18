@@ -32,7 +32,7 @@ This repo is both a real product-in-progress AND an opinionated demonstration of
 | Surface | URL | Try this |
 |---|---|---|
 | 📱 **Live PWA** | <https://pathways-iota.vercel.app/> | Installable on iOS + Android home screens. Forest + Marigold palette, bilingual UI, four quick-start chips. Resource cards with a Leaflet map view above them on geo queries. |
-| 🩺 **API health** | <https://prathik10-pathways.hf.space/health> | Returns `{"status":"ok","version":"0.7.0", "channels":["sms","web"], "modules":["dashboard","parole_reminders","writeback","audit"]}` |
+| 🩺 **API health** | <https://prathik10-pathways.hf.space/health> | Returns `{"status":"ok","version":"1.0.0", "channels":["sms","web"], "modules":["dashboard","parole_reminders","writeback","audit"]}` |
 | 📚 **OpenAPI / Swagger** | <https://prathik10-pathways.hf.space/docs> | Interactive. Try `/_debug/invoke` with `{"message":"Can I vote in Texas if I'm on parole?"}` |
 | 📊 **Caseworker dashboard** | <https://prathik10-pathways.hf.space/dashboard/> | Token-gated. Demo mode accepts any `Authorization: Bearer <anything>`. Anonymized aggregates only; no PII ever stored. Includes per-turn map-engagement counts as of Phase 7. |
 | 🧠 **Architecture deep-dive** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Why each Claude Code primitive is load-bearing in a safety-critical domain |
