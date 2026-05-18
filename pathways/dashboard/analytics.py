@@ -51,12 +51,15 @@ CREATE TABLE IF NOT EXISTS conversation_events (
     escalated BOOLEAN DEFAULT false,
     escalation_reason TEXT,
     matched_resource_count INT,
+    resources_with_coords_count INT DEFAULT 0,
     user_message_length INT,
     reply_length INT,
     crisis_fired BOOLEAN DEFAULT false,
     intake_complete BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT now()
 );
+ALTER TABLE conversation_events
+    ADD COLUMN IF NOT EXISTS resources_with_coords_count INT DEFAULT 0;
 CREATE INDEX IF NOT EXISTS idx_conv_events_created
     ON conversation_events (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_conv_events_region
@@ -88,6 +91,10 @@ class TurnEvent:
     escalated: bool = False
     escalation_reason: Optional[str] = None
     matched_resource_count: Optional[int] = None
+    # Per-turn map engagement signal: how many of the matched resources
+    # carried lat / lon and therefore could render a pin. Statewide
+    # hotlines (211, TRLA, 988) have no coords and don't count.
+    resources_with_coords_count: int = 0
     user_message_length: Optional[int] = None
     reply_length: Optional[int] = None
     crisis_fired: bool = False
@@ -154,6 +161,26 @@ def event_from_state(final_state: dict | object, thread_id: str, channel: str,
 
     matched = _get(final_state, "matched_resources") or []
 
+    # Count pin-able resources for the map view. A resource only pins on
+    # the map when both lat and lon are present and numeric; statewide
+    # hotlines lack both and are excluded by design.
+    coords_count = 0
+    for m in matched:
+        if not isinstance(m, dict):
+            # Tolerate the (rare) pydantic-shaped record
+            if hasattr(m, "model_dump"):
+                m = m.model_dump(mode="json")
+            else:
+                continue
+        lat, lon = m.get("lat"), m.get("lon")
+        if lat is None or lon is None:
+            continue
+        try:
+            float(lat); float(lon)
+        except (TypeError, ValueError):
+            continue
+        coords_count += 1
+
     return TurnEvent(
         thread_id=thread_id,
         channel=channel,
@@ -169,6 +196,7 @@ def event_from_state(final_state: dict | object, thread_id: str, channel: str,
         escalated=bool(_get(final_state, "escalation_reason")),
         escalation_reason=_get(final_state, "escalation_reason"),
         matched_resource_count=len(matched),
+        resources_with_coords_count=coords_count,
         user_message_length=len(user_message or ""),
         reply_length=len(reply or ""),
         crisis_fired=bool(crisis_fired),
@@ -252,11 +280,13 @@ class _PostgresStore:
                          workforce_region, supervision_status,
                          retrieval_confidence, retrieval_results_count,
                          audit_verdict, escalated, escalation_reason,
-                         matched_resource_count, user_message_length,
+                         matched_resource_count,
+                         resources_with_coords_count,
+                         user_message_length,
                          reply_length, crisis_fired, intake_complete,
                          created_at)
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
-                            %s,%s,%s,%s)
+                            %s,%s,%s,%s,%s)
                     """,
                     (
                         event.thread_id,
@@ -273,6 +303,7 @@ class _PostgresStore:
                         event.escalated,
                         event.escalation_reason,
                         event.matched_resource_count,
+                        event.resources_with_coords_count,
                         event.user_message_length,
                         event.reply_length,
                         event.crisis_fired,
@@ -305,6 +336,11 @@ class _PostgresStore:
                 escalated=bool(r["escalated"]),
                 escalation_reason=r["escalation_reason"],
                 matched_resource_count=r["matched_resource_count"],
+                # The column was added in a later migration; older rows
+                # may be NULL even though the dataclass default is 0.
+                resources_with_coords_count=int(
+                    r.get("resources_with_coords_count") or 0
+                ),
                 user_message_length=r["user_message_length"],
                 reply_length=r["reply_length"],
                 crisis_fired=bool(r["crisis_fired"]),
@@ -424,6 +460,14 @@ def summary(scope: Optional[dict] = None, days: int = 7) -> dict:
     if confs:
         avg_conf = sum(confs) / len(confs)
     matched_resources = sum((e.matched_resource_count or 0) for e in in_window)
+    # Map view engagement: how many of those matched resources were
+    # pin-able, and how many turns surfaced at least one pin.
+    pin_able_total = sum(
+        (e.resources_with_coords_count or 0) for e in in_window
+    )
+    turns_with_map = sum(
+        1 for e in in_window if (e.resources_with_coords_count or 0) > 0
+    )
 
     return {
         "window_days": days,
@@ -434,6 +478,8 @@ def summary(scope: Optional[dict] = None, days: int = 7) -> dict:
         "spanish_share": (spanish / total_turns) if total_turns else 0.0,
         "avg_retrieval_confidence": round(avg_conf, 3),
         "matched_resources_total": matched_resources,
+        "map_pins_total": pin_able_total,
+        "turns_with_map_view": turns_with_map,
     }
 
 

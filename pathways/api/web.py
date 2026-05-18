@@ -213,7 +213,41 @@ def web_turn(req: TurnRequest) -> TurnResponse:
     crisis = _run_crisis_check(req.message)
 
     final = _invoke_graph(req.message, crisis, thread_id)
-    return _shape_response(final, default_language="en")
+    response = _shape_response(final, default_language="en")
+    _log_map_metrics(thread_id=thread_id, response=response)
+    return response
+
+
+def _log_map_metrics(*, thread_id: str, response: TurnResponse) -> None:
+    """Emit one structured line per turn describing the map view payload.
+
+    Operators tail this stream to answer "how often does the map actually
+    render?" without having to crack open the dashboard. Keys are stable
+    so a downstream log shipper (Loki, Datadog) can group on them. The
+    thread_id is already the salted hash, so this carries no PII.
+
+    Counts:
+        cards_total : how many ResourceCards the PWA renders
+        cards_with_coords : how many have lat AND lon set (will pin)
+        map_renders : 1 if the PWA's <ResourceMap> will appear, else 0
+    """
+    try:
+        cards = response.resources or []
+        with_coords = sum(
+            1 for c in cards if c.lat is not None and c.lon is not None
+        )
+        logger.info(
+            "web_turn_map_metrics thread=%s cards_total=%d "
+            "cards_with_coords=%d map_renders=%d language=%s",
+            thread_id[:12],
+            len(cards),
+            with_coords,
+            1 if with_coords > 0 else 0,
+            response.language,
+        )
+    except Exception:
+        # Logging must never break the API path.
+        logger.exception("map metrics log failed (non-fatal)")
 
 
 # ---------------------------------------------------------------------------
