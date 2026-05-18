@@ -172,7 +172,14 @@ def test_turn_resource_cards_have_expected_shape(client):
     for card in r["resources"]:
         assert "id" in card
         assert "name" in card
-        # phone or url should be present for at least one card
+        # Map-view contract: lat and lon are always present in the
+        # response shape (the PWA's ResourceMap reads them). Both are
+        # nullable: statewide hotlines have no coords and arrive as
+        # nulls, which the map filters out.
+        assert "lat" in card
+        assert "lon" in card
+        assert card["lat"] is None or isinstance(card["lat"], (int, float))
+        assert card["lon"] is None or isinstance(card["lon"], (int, float))
     # At least one resource (or fallback to 211)
     assert len(r["resources"]) >= 0
 

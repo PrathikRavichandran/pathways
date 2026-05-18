@@ -77,7 +77,13 @@ class TurnRequest(BaseModel):
 
 
 class ResourceCard(BaseModel):
-    """Lightweight projection of a tx_resources entry the PWA renders."""
+    """Lightweight projection of a tx_resources entry the PWA renders.
+
+    lat / lon are forwarded from the underlying resource record when
+    present. Statewide hotlines (211 Texas, TRLA, 988) don't carry
+    coordinates and arrive with both fields null; the PWA's map view
+    filters those out and renders no pin for them.
+    """
     id: str
     name: str
     description: Optional[str] = None
@@ -86,6 +92,8 @@ class ResourceCard(BaseModel):
     category: Optional[str] = None
     distance_miles: Optional[float] = None
     languages: list[str] = Field(default_factory=list)
+    lat: Optional[float] = None
+    lon: Optional[float] = None
 
 
 class TurnResponse(BaseModel):
@@ -205,7 +213,41 @@ def web_turn(req: TurnRequest) -> TurnResponse:
     crisis = _run_crisis_check(req.message)
 
     final = _invoke_graph(req.message, crisis, thread_id)
-    return _shape_response(final, default_language="en")
+    response = _shape_response(final, default_language="en")
+    _log_map_metrics(thread_id=thread_id, response=response)
+    return response
+
+
+def _log_map_metrics(*, thread_id: str, response: TurnResponse) -> None:
+    """Emit one structured line per turn describing the map view payload.
+
+    Operators tail this stream to answer "how often does the map actually
+    render?" without having to crack open the dashboard. Keys are stable
+    so a downstream log shipper (Loki, Datadog) can group on them. The
+    thread_id is already the salted hash, so this carries no PII.
+
+    Counts:
+        cards_total : how many ResourceCards the PWA renders
+        cards_with_coords : how many have lat AND lon set (will pin)
+        map_renders : 1 if the PWA's <ResourceMap> will appear, else 0
+    """
+    try:
+        cards = response.resources or []
+        with_coords = sum(
+            1 for c in cards if c.lat is not None and c.lon is not None
+        )
+        logger.info(
+            "web_turn_map_metrics thread=%s cards_total=%d "
+            "cards_with_coords=%d map_renders=%d language=%s",
+            thread_id[:12],
+            len(cards),
+            with_coords,
+            1 if with_coords > 0 else 0,
+            response.language,
+        )
+    except Exception:
+        # Logging must never break the API path.
+        logger.exception("map metrics log failed (non-fatal)")
 
 
 # ---------------------------------------------------------------------------
@@ -298,6 +340,23 @@ def _invoke_graph(
     return _coerce_to_dict(final)
 
 
+def _coerce_float(v: Any) -> Optional[float]:
+    """Best-effort cast a resource-record field to float for the map.
+
+    The underlying resources arrive from a mix of sources (Postgres
+    returns Decimals, the seed JSON returns Python floats or ints, the
+    nearby ranker injects floats). Statewide records have no coord and
+    show up as None / missing. Anything that can't be cast cleanly
+    returns None so the PWA's map view treats the row as un-pinable.
+    """
+    if v is None:
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
 def _coerce_to_dict(state: Any) -> dict[str, Any]:
     """LangGraph returns a dict with mixed Pydantic + primitives;
     flatten everything to JSON-friendly types."""
@@ -345,6 +404,8 @@ def _shape_response(final: dict[str, Any], default_language: str) -> TurnRespons
                 category=m.get("category"),
                 distance_miles=m.get("distance_miles"),
                 languages=list(m.get("languages") or []),
+                lat=_coerce_float(m.get("lat")),
+                lon=_coerce_float(m.get("lon")),
             )
         )
 

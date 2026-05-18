@@ -23,6 +23,10 @@ export interface ResourceCard {
   category: string | null;
   distance_miles: number | null;
   languages: string[];
+  // Coordinates for the map view. Statewide hotlines arrive with both
+  // null and are silently omitted from the map (still shown in the list).
+  lat: number | null;
+  lon: number | null;
 }
 
 export interface TurnResponse {
