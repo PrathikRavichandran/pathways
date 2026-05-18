@@ -66,29 +66,50 @@ def run(state: PathwaysState) -> dict[str, Any]:
     # when the user is on parole and we have not yet offered. The
     # auditor sees the appended text and clears it (no legal claim,
     # no outcome promise; it's an operational opt-in question).
-    extra: dict[str, Any] = {}
+    #
+    # Important: we do NOT set intake.parole_reminder_offered=True here.
+    # That commit happens in the send node, after audit has finished
+    # revising. If we set it here, an audit soft-block + revision would
+    # gate this function out on the second draft pass and the user
+    # would receive a reply without the offer. The offer-append itself
+    # is idempotent (checks for the marker phrase first) so re-running
+    # draft within a turn cannot duplicate it.
     if _should_offer_parole_reminder(state):
         draft = _append_parole_offer(draft, language=state.intake.language or "en")
-        updated_intake = state.intake.model_copy(
-            update={"parole_reminder_offered": True}
-        )
-        extra["intake"] = updated_intake
 
-    return {"draft_response": draft, "next_node": "audit", **extra}
+    return {"draft_response": draft, "next_node": "audit"}
 
 
 def _should_offer_parole_reminder(state: PathwaysState) -> bool:
     intake = state.intake
     if intake.parole_reminder_offered:
+        # Already delivered in a previous turn (durable state set by send).
         return False
     if intake.parole_reminder_opt_in is not None:
+        # User already accepted or declined; never re-offer.
         return False
     supervision = intake.supervision_status
     val = supervision.value if hasattr(supervision, "value") else str(supervision)
     return val == "parole"
 
 
+# Marker substrings the send node uses to detect that the offer made it
+# into the final reply and the draft node uses for idempotency.
+PAROLE_OFFER_MARKER_EN = "Reply YES with the date"
+PAROLE_OFFER_MARKER_ES = "Responde SI con la fecha"
+
+
 def _append_parole_offer(draft: str, language: str) -> str:
+    """Append the EN or ES parole reminder offer to the draft.
+
+    Idempotent within a single turn: if the marker phrase is already
+    present (e.g., from a prior pass during an audit revision loop),
+    the draft is returned unchanged.
+    """
+    draft = draft or ""
+    marker = PAROLE_OFFER_MARKER_ES if language == "es" else PAROLE_OFFER_MARKER_EN
+    if marker in draft:
+        return draft
     if language == "es":
         offer = (
             "\n\nUna ultima cosa: si quieres, te puedo enviar un mensaje el dia "
@@ -100,7 +121,7 @@ def _append_parole_offer(draft: str, language: str) -> str:
             "\n\nOne more thing: if you want, I can text you the day before each "
             "parole check-in. Reply YES with the date (e.g., YES March 5)."
         )
-    return (draft or "").rstrip() + offer
+    return draft.rstrip() + offer
 
 
 def _llm_draft(state: PathwaysState) -> str:

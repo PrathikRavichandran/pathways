@@ -69,10 +69,23 @@ INTAKE_SYSTEM_PROMPT = """You extract routing fields from a user message for a T
   "prison_facility": "<TDCJ unit name if mentioned, else null>"
 }
 
-Rules:
-- Be conservative: when a field is not clearly indicated, use null or "unknown".
-- Do not infer language from a single word; require sustained Spanish or an explicit "español".
-- Do not infer city from a region (Houston is Greater Houston; Dallas/Fort Worth is DFW).
+Category definitions (match user language to the right category):
+- housing: shelter, place to stay, homeless, section 8, public housing, transitional living, rent help, vivienda, albergue, donde dormir, sin casa
+- benefits: SNAP, food, food stamps, hungry, eat, meals, comida, alimentos, Medicaid, TANF, SSI, SSDI, social security, healthcare, beneficios
+- employment: job, work, hire, employer, fair-chance, career, trabajo, empleo, contratar
+- id_documents: ID card, state ID, driver's license, social security card, birth certificate, identification, identificacion, licencia
+- record_clearing: expunge, expunction, non-disclosure, seal, clear my record, background check, antecedentes, limpiar mi record
+- legal_question: legal advice, can I, am I eligible, court, lawyer, parole revocation, puedo, derecho legal
+- parole_reporting: parole officer, PO appointment, report to parole, miss my report, check-in
+- crisis: handled separately by an upstream hook; do not set top_need=crisis unless the user explicitly names a crisis NOT covered by the keyword categories above
+
+Hard rules:
+- Multi-need: when the user mentions multiple needs in the same message, put the most time-critical in `top_need` (priority order: housing > food/benefits > id/parole > employment > legal/record-clearing) and put EVERY OTHER NEED in `secondary_needs`. Do not drop a need. "I need shelter, food, and a job" must produce top_need=housing AND secondary_needs containing both benefits and employment.
+- "food", "comida", "hungry", "food stamps", "SNAP", "groceries" always map to `benefits`. Never drop them.
+- "ID", "license", "identification", "identificacion" always map to `id_documents`.
+- Be conservative on `supervision_status` and `language`: when not clearly indicated, use "unknown" (the merge layer keeps the existing value rather than overwriting).
+- Do not infer language from a single Spanish word in an English sentence.
+- Do not infer city from a region (Houston is in Greater Houston; Dallas/Fort Worth is DFW).
 - If the user is replying to a specific question (e.g., they were just asked for their name), pull the answer to that question."""
 
 
