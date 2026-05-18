@@ -13,7 +13,7 @@ This file is the snapshot.
 |---|---|---|
 | PWA (installable) | https://pathways-iota.vercel.app/ | The user-facing chat. Welcome screen with the Sprout logo, four quick-start chips, bilingual UI. |
 | Backend | https://prathik10-pathways.hf.space/ | FastAPI app behind the PWA + SMS channels. |
-| Health | https://prathik10-pathways.hf.space/health | `{"status":"ok","version":"0.7.0","channels":["sms","web"],"modules":["dashboard","parole_reminders","writeback","audit"]}` |
+| Health | https://prathik10-pathways.hf.space/health | `{"status":"ok","version":"1.0.0","channels":["sms","web"],"modules":["dashboard","parole_reminders","writeback","audit"]}` |
 | OpenAPI / Swagger | https://prathik10-pathways.hf.space/docs | Interactive API explorer. Try `/_debug/invoke`. |
 | Caseworker dashboard | https://prathik10-pathways.hf.space/dashboard/ | Token-gated. Demo mode accepts `Authorization: Bearer <anything>`. |
 | Markdown report export | https://prathik10-pathways.hf.space/dashboard/api/report.md | Anonymized monthly trend report. Same auth. |

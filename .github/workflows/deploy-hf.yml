@@ -41,7 +41,7 @@ jobs:
       url: https://prathik10-pathways.hf.space
     steps:
       - name: Check out full history
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # HF rejects shallow pushes. Pull every commit so the force-push
           # carries a full history.

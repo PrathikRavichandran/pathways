@@ -52,19 +52,41 @@ Walk this fixed checklist. For each file: open if relevant, skip if not, never b
 | `docs/PHASE6_DEFERRED.md` | A previously-deferred item shipped, or a new deferred item was identified with a documented unblock criterion | Add a note at the top mentioning the shipped items by phase + JOURNAL pointer. Don't delete the deferred entries; they're a historical record of why we made the call we made |
 | `docs/INTERVIEW_BRIEFING.md` | A new feature changes what's true in §4 (Claude Code primitives), §11 (future roadmap), or §15 (file paths to cite cold) | Surgical edits only. The briefing is a study artifact tuned for cold-readability; don't bloat it with every internal detail. Update test counts in §9. Update the roadmap in §11 if an item moved deferred → shipped |
 
-### Step 3: Apply consistent values
+### Step 3: Classify the PR + bump the version
+
+**Operator standing instruction (2026-05-18):** every merged PR bumps the version unless the operator says otherwise. The Skill picks the bump size by classifying the PR, then proposes it to the operator before committing.
+
+**SemVer classification rules.** Read the merged PR's title, body, and `gh pr view <N> --json files` to pick the bump size:
+
+| Bump | Trigger | Examples |
+|---|---|---|
+| **PATCH** (`X.Y.Z → X.Y.(Z+1)`) | Bug fix, doc-only change, internal refactor, dependency bump, ops automation, CI workflow change, test additions, observability additions (logs / metrics that don't change user-visible behavior). Anything that doesn't add a new capability the user can see. | Docs sync, `actions/checkout` bump, adding tests, the `pathways-docs-sync` Skill itself (no user-visible change), structured logging additions, demo-seed enrichment. |
+| **MINOR** (`X.Y.Z → X.(Y+1).0`) | New user-visible feature, backward compatible. A user can do something they couldn't do before. | Map view above resource cards (PR #1), CI auto-deploy workflow (PR #2 — debatable, MINOR is defensible because it changes operator workflow), a new Skill loaded by users, a new MCP tool. |
+| **MAJOR** (`X.Y.Z → (X+1).0.0`) | Breaking change to the public API contract. A previously-working integration breaks. | Removing a `/web/turn` field, changing the salted-hash thread-ID derivation salt (breaks existing session resume), changing the SMS reply shape, deleting an MCP tool. Rare. Hold for genuinely breaking changes; do NOT use for milestone marketing. The operator explicitly bumped to 1.0.0 on 2026-05-18 as a one-time milestone — that's an override, not the default rule. |
+
+**Defaults that resolve ambiguity:** when in doubt between PATCH and MINOR, prefer PATCH. Better to under-bump and correct on the next PR than to inflate the version. When in doubt between MINOR and MAJOR, ALWAYS pick MINOR unless the operator explicitly authorizes MAJOR — wrong major bumps look like marketing inflation.
+
+**Compute the next version:**
+1. Read the current version from `pathways/api/main.py` (search for `"version":`).
+2. Parse as `X.Y.Z`.
+3. Apply the bump based on the classification above.
+4. Propose to the operator: "PR #N looks like a {patch|minor|major} change. Bumping {current} → {next}. OK to proceed, or override?"
+5. After confirmation (or after a clear yes-by-default in the operator's standing instruction), continue with the update.
+
+### Step 4: Apply consistent values
 
 These values change together. Update them everywhere they appear in one pass.
 
 | Value | Where it appears |
 |---|---|
 | Test count (currently 305 unit + 73 evals) | README badge, README `> Status:` line, STATUS Quality signal, INTERVIEW_BRIEFING §9 |
-| Version string (currently 0.7.0) | README `/health` example, STATUS `/health` row, optionally pathways/api/main.py if the version was meant to bump |
+| Version string | `pathways/api/main.py:110` (source of truth — search for `"version":`), README `/health` example, STATUS `/health` row. Also mention the new version in the JOURNAL entry for this merge. Re-run `grep -rn "<old-version>" .` after the bump to catch any references this Skill didn't anticipate. |
 | Phase number (currently Phase 7 complete) | README `> Status:` line, JOURNAL new entry, ARCHITECTURE §11 heading if extended, SHOWCASE §9 heading if extended |
 | Modules list in `/health` | README `/health` example, STATUS `/health` row. Currently `["dashboard","parole_reminders","writeback","audit"]` |
 | Workflow inventory | README "What's next" operator-setup numbering, STATUS Operator setup block. Currently 5 workflows: ci, evals, daily-cron, refresh-data, deploy-hf |
+| Pinned action versions in workflows | All four workflow files under `.github/workflows/`. Currently `actions/checkout@v5`. Bump together when GitHub deprecates an action version (the deploy-hf logs surface a `::warning::` when a workflow uses a deprecated action). |
 
-### Step 4: Write the JOURNAL entry
+### Step 5: Write the JOURNAL entry
 
 The JOURNAL has a specific voice — dense paragraph form, no bullet lists inside an entry, file paths inline as `path/to/file.py`, counts inline as parenthetical asides ("305 unit tests (241 → 305 from ...)"). One entry per merged PR. Format:
 
@@ -74,7 +96,7 @@ The JOURNAL has a specific voice — dense paragraph form, no bullet lists insid
 
 Append above the closing `Entries continue from here as work progresses.` line. Date matches the merge date, not the open date.
 
-### Step 5: Open a single PR for all doc updates
+### Step 6: Open a single PR for all doc updates
 
 ```bash
 git checkout main
@@ -103,7 +125,7 @@ EOF
 )"
 ```
 
-### Step 6: Report back
+### Step 7: Report back
 
 After opening the PR, hand back to the operator with a tight summary:
 - Number of files touched
@@ -124,3 +146,5 @@ After opening the PR, hand back to the operator with a tight summary:
 - The JOURNAL grows linearly. Never delete or reorder old entries; they are the project's memory.
 - ARCHITECTURE has a §10 iteration roadmap that was written before Phase 4. Don't try to edit that roadmap retroactively; the roadmap is wrong by design (it was a snapshot of intent at the time) and the §11+ appendix is where shipped truth lives.
 - The deploy-hf.yml workflow auto-deploys merged main to the HF Space within ~5 minutes. Doc PRs go through the same pipeline. Be mindful that landing a doc-only PR triggers a Docker rebuild on HF; if you're doing many small doc commits, batch them into one PR to avoid spinning HF unnecessarily.
+- The deploy-hf logs surface GitHub Actions deprecation warnings near the bottom of every run. When you see `::warning::Node.js NN actions are deprecated`, that is the signal to open a chore PR bumping the affected `uses: actions/<name>@vN` lines across all four workflows. Treat this as a recurring housekeeping task — small but real, easy to forget until something breaks.
+- The version-bump rule (Step 3) was added 2026-05-18 after the operator noted that 0.7.0 stayed pinned across two big PRs. The default is PATCH; reach for MINOR only when the merged change adds a capability the user can see. Wrong-direction bumps are very visible because the version is in the README, the live `/health`, and the JOURNAL, so they get caught.
