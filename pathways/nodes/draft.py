@@ -62,25 +62,18 @@ def run(state: PathwaysState) -> dict[str, Any]:
     except Exception:
         draft = _template_draft(state)
 
-    # Phase 6: parole reminder opt-in offer. Append a one-line offer
-    # when the user is on parole and we have not yet offered. The
-    # auditor sees the appended text and clears it (no legal claim,
-    # no outcome promise; it's an operational opt-in question).
-    #
-    # Important: we do NOT set intake.parole_reminder_offered=True here.
-    # That commit happens in the send node, after audit has finished
-    # revising. If we set it here, an audit soft-block + revision would
-    # gate this function out on the second draft pass and the user
-    # would receive a reply without the offer. The offer-append itself
-    # is idempotent (checks for the marker phrase first) so re-running
-    # draft within a turn cannot duplicate it.
-    if _should_offer_parole_reminder(state):
-        draft = _append_parole_offer(draft, language=state.intake.language or "en")
-
+    # Note: the parole reminder offer is NOT appended here. It used to
+    # be, but the audit node could escalate (hard-block or revision-
+    # exhaustion) and the escalation reply would replace the entire
+    # draft, dropping the offer with it. The offer now lives in the
+    # send node, after audit has settled and the draft has been
+    # accepted. See pathways/nodes/send.py.
     return {"draft_response": draft, "next_node": "audit"}
 
 
-def _should_offer_parole_reminder(state: PathwaysState) -> bool:
+def should_offer_parole_reminder(state: PathwaysState) -> bool:
+    """Public predicate the send node uses to decide whether to append
+    the parole opt-in offer to the final reply."""
     intake = state.intake
     if intake.parole_reminder_offered:
         # Already delivered in a previous turn (durable state set by send).
@@ -94,17 +87,18 @@ def _should_offer_parole_reminder(state: PathwaysState) -> bool:
 
 
 # Marker substrings the send node uses to detect that the offer made it
-# into the final reply and the draft node uses for idempotency.
+# into the final reply.
 PAROLE_OFFER_MARKER_EN = "Reply YES with the date"
 PAROLE_OFFER_MARKER_ES = "Responde SI con la fecha"
 
 
-def _append_parole_offer(draft: str, language: str) -> str:
+def append_parole_offer(draft: str, language: str) -> str:
     """Append the EN or ES parole reminder offer to the draft.
 
-    Idempotent within a single turn: if the marker phrase is already
-    present (e.g., from a prior pass during an audit revision loop),
-    the draft is returned unchanged.
+    Idempotent: if the marker phrase is already present the draft is
+    returned unchanged. Public so send.py can call it; draft.py no
+    longer does because the offer must survive the audit loop and
+    therefore needs to be appended AFTER audit completes.
     """
     draft = draft or ""
     marker = PAROLE_OFFER_MARKER_ES if language == "es" else PAROLE_OFFER_MARKER_EN
@@ -122,6 +116,12 @@ def _append_parole_offer(draft: str, language: str) -> str:
             "parole check-in. Reply YES with the date (e.g., YES March 5)."
         )
     return draft.rstrip() + offer
+
+
+# Backward-compat aliases for any external callers / tests that still
+# reference the underscore-prefixed names.
+_should_offer_parole_reminder = should_offer_parole_reminder
+_append_parole_offer = append_parole_offer
 
 
 def _llm_draft(state: PathwaysState) -> str:

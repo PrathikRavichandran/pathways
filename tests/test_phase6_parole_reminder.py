@@ -130,13 +130,16 @@ def test_detect_opt_in_reply_yes_no_date_still_recognized():
 # ---------------------------------------------------------------------------
 
 
-def test_draft_appends_parole_offer_when_supervision_is_parole(monkeypatch):
+def test_draft_does_not_append_parole_offer_anymore():
+    """Architectural invariant: the parole offer is appended by the
+    send node, NOT by draft. This keeps the offer out of the audit
+    node's view so an audit soft-block + revision loop cannot strip it,
+    and so a hard-block escalation does not silently drop it."""
     from pathways.nodes import draft as draft_node
     from pathways.state import (
         IntakeProfile, PathwaysState, SupervisionStatus, TopNeed,
     )
 
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     state = PathwaysState(
         session_id="t1",
         user_message="I have to report to my PO next week",
@@ -146,15 +149,59 @@ def test_draft_appends_parole_offer_when_supervision_is_parole(monkeypatch):
         ),
     )
     out = draft_node.run(state)
-    assert "Reply YES" in out["draft_response"]
-    # Draft no longer commits the durable flag; that moved to the send
-    # node so audit-revision passes don't strip the offer. Verify draft
-    # is not setting it here.
+    assert "Reply YES" not in (out["draft_response"] or "")
     assert "intake" not in out
 
 
-def test_draft_does_not_reoffer_when_already_offered():
-    from pathways.nodes import draft as draft_node
+def test_send_appends_parole_offer_when_supervision_is_parole():
+    """Send is where the offer now lives. Given supervision=parole and
+    not-yet-offered, send appends the EN marker to the draft."""
+    from pathways.nodes import send as send_node
+    from pathways.state import (
+        IntakeProfile, PathwaysState, SupervisionStatus, TopNeed,
+    )
+
+    state = PathwaysState(
+        session_id="t1",
+        user_message="I have my PO check-in next week",
+        draft_response="Here is the help you asked for.",
+        intake=IntakeProfile(
+            top_need=TopNeed.PAROLE_REPORTING,
+            supervision_status=SupervisionStatus.PAROLE,
+        ),
+    )
+    out = send_node.run(state)
+    assert "Reply YES with the date" in out["final_response"]
+    # Durable flag committed in the same step
+    assert "intake" in out
+    assert out["intake"].parole_reminder_offered is True
+
+
+def test_send_appends_spanish_offer_when_language_is_es():
+    from pathways.nodes import send as send_node
+    from pathways.state import (
+        IntakeProfile, PathwaysState, SupervisionStatus, TopNeed,
+    )
+
+    state = PathwaysState(
+        session_id="t1",
+        user_message="necesito ayuda con mi cita",
+        draft_response="Hola. Aqui esta lo que pediste.",
+        intake=IntakeProfile(
+            top_need=TopNeed.PAROLE_REPORTING,
+            supervision_status=SupervisionStatus.PAROLE,
+            language="es",
+        ),
+    )
+    out = send_node.run(state)
+    assert "Responde SI con la fecha" in out["final_response"]
+    assert out["intake"].parole_reminder_offered is True
+
+
+def test_send_does_not_reoffer_when_already_offered_previously():
+    """If the durable flag was set in a prior turn, send must not
+    append again."""
+    from pathways.nodes import send as send_node
     from pathways.state import (
         IntakeProfile, PathwaysState, SupervisionStatus, TopNeed,
     )
@@ -162,100 +209,20 @@ def test_draft_does_not_reoffer_when_already_offered():
     state = PathwaysState(
         session_id="t1",
         user_message="ok thanks",
+        draft_response="Here are more shelter options.",
         intake=IntakeProfile(
             top_need=TopNeed.PAROLE_REPORTING,
             supervision_status=SupervisionStatus.PAROLE,
             parole_reminder_offered=True,
         ),
     )
-    out = draft_node.run(state)
-    assert "Reply YES" not in out["draft_response"]
-    # When we don't append, we don't return an updated intake either
+    out = send_node.run(state)
+    assert "Reply YES" not in out["final_response"]
+    # Durable flag was already true; no need to re-commit.
     assert "intake" not in out
 
 
-def test_draft_reappends_offer_on_audit_revision():
-    """If draft runs twice in one turn (audit soft-block then revision)
-    AND the intake.parole_reminder_offered flag has NOT been set yet
-    (because draft no longer sets it), the second pass must still append
-    the offer. The append is also idempotent so running it twice on a
-    draft that already contains the offer leaves the offer untouched."""
-    from pathways.nodes import draft as draft_node
-    from pathways.state import (
-        IntakeProfile, PathwaysState, SupervisionStatus, TopNeed,
-    )
-
-    state = PathwaysState(
-        session_id="t1",
-        user_message="thanks, that helps",
-        intake=IntakeProfile(
-            top_need=TopNeed.PAROLE_REPORTING,
-            supervision_status=SupervisionStatus.PAROLE,
-            # offered=False, mirroring the post-fix state mid-turn
-        ),
-    )
-    out_pass_1 = draft_node.run(state)
-    assert "Reply YES" in out_pass_1["draft_response"]
-    # Simulate a second pass with the same un-committed offered=False
-    # but a draft that now has the offer in it (audit revision returns
-    # the prior draft unchanged in worst case).
-    state2 = state.model_copy(update={"draft_response": out_pass_1["draft_response"]})
-    out_pass_2 = draft_node.run(state2)
-    # Idempotent: count of marker should still be 1
-    assert out_pass_2["draft_response"].count("Reply YES with the date") == 1
-
-
-def test_send_marks_parole_offered_when_offer_in_final_draft():
-    """Send commits the durable parole_reminder_offered flag when the
-    offer made it into the final reply."""
-    from pathways.nodes import send as send_node
-    from pathways.state import (
-        IntakeProfile, PathwaysState, SupervisionStatus, TopNeed,
-    )
-
-    state = PathwaysState(
-        session_id="t1",
-        user_message="thanks",
-        draft_response=(
-            "Here is the help. One more thing: Reply YES with the date "
-            "(e.g., YES March 5)."
-        ),
-        intake=IntakeProfile(
-            top_need=TopNeed.PAROLE_REPORTING,
-            supervision_status=SupervisionStatus.PAROLE,
-            parole_reminder_offered=False,
-        ),
-    )
-    out = send_node.run(state)
-    assert out["final_response"] == state.draft_response
-    assert "intake" in out
-    assert out["intake"].parole_reminder_offered is True
-
-
-def test_send_marks_offered_for_spanish_offer_too():
-    from pathways.nodes import send as send_node
-    from pathways.state import (
-        IntakeProfile, PathwaysState, SupervisionStatus, TopNeed,
-    )
-
-    state = PathwaysState(
-        session_id="t1",
-        user_message="gracias",
-        draft_response="Hola. Responde SI con la fecha (por ejemplo, SI marzo 5).",
-        intake=IntakeProfile(
-            top_need=TopNeed.PAROLE_REPORTING,
-            supervision_status=SupervisionStatus.PAROLE,
-            language="es",
-            parole_reminder_offered=False,
-        ),
-    )
-    out = send_node.run(state)
-    assert out["intake"].parole_reminder_offered is True
-
-
-def test_send_does_not_overwrite_intake_when_no_offer_in_draft():
-    """Plain draft with no parole offer should not cause send to
-    return an intake update at all."""
+def test_send_does_not_offer_when_supervision_is_unknown():
     from pathways.nodes import send as send_node
     from pathways.state import IntakeProfile, PathwaysState, TopNeed
 
@@ -266,10 +233,39 @@ def test_send_does_not_overwrite_intake_when_no_offer_in_draft():
         intake=IntakeProfile(top_need=TopNeed.HOUSING),
     )
     out = send_node.run(state)
+    assert "Reply YES" not in out["final_response"]
     assert "intake" not in out
 
 
-def test_draft_spanish_offer_when_language_is_es():
+def test_send_offer_append_is_idempotent():
+    """If the draft already contains the offer (defensive guard against
+    upstream coincidences), send should not duplicate it."""
+    from pathways.nodes import send as send_node
+    from pathways.state import (
+        IntakeProfile, PathwaysState, SupervisionStatus, TopNeed,
+    )
+
+    pre_existing_offer_text = (
+        "Hello.\n\nOne more thing: if you want, I can text you the day before "
+        "each parole check-in. Reply YES with the date (e.g., YES March 5)."
+    )
+    state = PathwaysState(
+        session_id="t1",
+        user_message="thanks",
+        draft_response=pre_existing_offer_text,
+        intake=IntakeProfile(
+            top_need=TopNeed.PAROLE_REPORTING,
+            supervision_status=SupervisionStatus.PAROLE,
+        ),
+    )
+    out = send_node.run(state)
+    # Marker appears exactly once
+    assert out["final_response"].count("Reply YES with the date") == 1
+
+
+def test_draft_does_not_emit_spanish_offer_anymore():
+    """Architectural invariant (same as the EN sibling test above):
+    the Spanish offer is appended by send, not draft."""
     from pathways.nodes import draft as draft_node
     from pathways.state import (
         IntakeProfile, PathwaysState, SupervisionStatus, TopNeed,
@@ -285,7 +281,7 @@ def test_draft_spanish_offer_when_language_is_es():
         ),
     )
     out = draft_node.run(state)
-    assert "Responde SI" in out["draft_response"]
+    assert "Responde SI" not in (out["draft_response"] or "")
 
 
 # ---------------------------------------------------------------------------
