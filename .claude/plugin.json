@@ -26,7 +26,8 @@
     "skills/employment-pathway",
     "skills/record-clearing-tx",
     "skills/benefits-navigator",
-    "skills/crisis-response"
+    "skills/crisis-response",
+    "skills/pathways-docs-sync"
   ],
   "agents": [
     "agents/compliance-auditor.md",

@@ -285,3 +285,15 @@ That layered design — explicit graph for structure, Claude Code primitives for
 | Worked SMS conversations end-to-end | [`examples/sample_conversations.md`](../examples/sample_conversations.md) |
 | Compliance posture (PII, HITL, scope) | [`docs/COMPLIANCE.md`](COMPLIANCE.md) |
 | Live API | <https://prathik10-pathways.hf.space/docs> |
+
+---
+
+## 9. Phase 7 additions (2026-05-18)
+
+Two changes landed in tight succession via PR #1 and PR #2.
+
+**PR #1 — resource map view in the PWA.** A new `web/src/components/ResourceMap.tsx` mounts above the existing resource cards in the bot bubble whenever at least one returned card carries `lat` / `lon`. Self-gates by returning null when zero pin-able. Backend change is small: `pathways/api/web.py::ResourceCard` gained nullable `lat` / `lon` fields, and `_shape_response` now forwards them via a defensive `_coerce_float` helper that handles psycopg `Decimal`, numeric strings, and garbage values without raising. The map embed uses OpenStreetMap tiles (no API key, no billing); pin popups deep-link to Google Maps via the documented URL API so iOS Safari and Android Chrome open the native Google Maps app when installed. Dashboard analytics extended with `resources_with_coords_count` per turn and `map_pins_total` / `turns_with_map_view` aggregates. New structured log `web_turn_map_metrics ...` emits per turn so operators can grep for map-render frequency without opening the dashboard. Tests: 24 new in `tests/test_phase7_map_view.py` covering type coercion, projection, end-to-end shape, and analytics tracking.
+
+**PR #2 — CI auto-deploy of `main` to the HF Space.** New `.github/workflows/deploy-hf.yml` force-pushes the repo to `huggingface.co/spaces/prathik10/pathways` on every merge and on `workflow_dispatch`. Polls `/health` for 10 min and reports the result, fail-soft (push success != HF rebuild completion). One-time operator setup is `gh secret set HF_TOKEN` with a write-scope token. Joins the existing four workflows for five total in `.github/workflows/`.
+
+Both PRs reused existing primitives rather than adding new ones — the architecture didn't grow. The lesson is that a layered design pays out at the additive boundary: a new UI surface is just a new React component plus a new field in the projection model; a new ops automation is one workflow file plus a one-line operator action. No restructuring required.
