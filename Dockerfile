@@ -22,6 +22,19 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Application code.
 COPY . .
 
+# Pre-generate the corpus_embeddings.npy sidecar so the HybridRetriever
+# can boot without a runtime download. This downloads BAAI/bge-small-en-v1.5
+# (~130 MB) once at build time, embeds the 95 corpus entries (~3 seconds),
+# and writes a small (~150 KB) .npy file alongside corpus.json. Without
+# this step the HybridRetriever logs a warning and falls back to BM25
+# even when PATHWAYS_RETRIEVAL_BACKEND=hybrid is set.
+#
+# The model weights are cached in /root/.cache/huggingface so the
+# runtime container doesn't re-download. Build is idempotent: re-runs
+# write the same sidecar.
+RUN python scripts/embed_corpus.py --backend file \
+    && ls -lh mcp_servers/pathways_corpus/corpus_embeddings.npy
+
 # HF Spaces injects PORT=7860; default for local Docker runs too.
 ENV PORT=7860
 EXPOSE 7860
