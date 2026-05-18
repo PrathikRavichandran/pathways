@@ -1,0 +1,103 @@
+name: Deploy to Hugging Face Space
+
+# Mirrors main to https://huggingface.co/spaces/prathik10/pathways so a
+# merge into main lands on the live HF Space within a few minutes
+# (most of which is the Docker rebuild including the corpus-embed step).
+#
+# One-time setup before this workflow can succeed:
+#   1. Create an HF access token with WRITE scope:
+#        https://huggingface.co/settings/tokens
+#   2. Add it as a repo secret named HF_TOKEN:
+#        gh secret set HF_TOKEN
+#   3. (Optional) Override the Space coords by setting the repo vars
+#      HF_SPACE_OWNER and HF_SPACE_NAME. Defaults match the live deploy.
+#
+# Force-push rationale: HF Spaces start their git history from an initial
+# commit that doesn't share ancestry with this GitHub repo. Each push
+# from CI overwrites the Space's history with this repo's main. If you
+# ever edit files directly in the HF web UI, those edits are clobbered
+# on the next merge — keep all changes in this repo.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Avoid pile-ups: a second merge while the first is still pushing waits
+# instead of racing. HF rejects concurrent pushes anyway.
+concurrency:
+  group: deploy-hf
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Mirror main -> HF Space
+    runs-on: ubuntu-latest
+    environment:
+      name: production-hf
+      url: https://prathik10-pathways.hf.space
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@v4
+        with:
+          # HF rejects shallow pushes. Pull every commit so the force-push
+          # carries a full history.
+          fetch-depth: 0
+
+      - name: Verify HF_TOKEN is configured
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::HF_TOKEN secret is not set on this repo."
+            echo "Create one at https://huggingface.co/settings/tokens (write scope),"
+            echo "then: gh secret set HF_TOKEN"
+            exit 1
+          fi
+          echo "HF_TOKEN present (length=${#HF_TOKEN})"
+
+      - name: Push to HF Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_OWNER: ${{ vars.HF_SPACE_OWNER || 'prathik10' }}
+          HF_SPACE_NAME: ${{ vars.HF_SPACE_NAME || 'pathways' }}
+        run: |
+          set -euo pipefail
+          git config user.email "deploy-bot@github.actions"
+          git config user.name "GitHub Actions (HF deploy)"
+
+          # The username segment in the URL doesn't have to match the
+          # token owner — HF authenticates entirely on the token. Using
+          # the space owner keeps the remote URL readable in logs.
+          REMOTE="https://${HF_SPACE_OWNER}:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_OWNER}/${HF_SPACE_NAME}"
+
+          git remote add huggingface "$REMOTE"
+
+          echo "Force-pushing $(git rev-parse --short HEAD) to ${HF_SPACE_OWNER}/${HF_SPACE_NAME} ..."
+          git push huggingface HEAD:main --force
+
+      - name: Poll /health for deploy completion
+        env:
+          HF_SPACE_OWNER: ${{ vars.HF_SPACE_OWNER || 'prathik10' }}
+          HF_SPACE_NAME: ${{ vars.HF_SPACE_NAME || 'pathways' }}
+        run: |
+          # HF rebuilds are typically 2-4 minutes. Poll /health for up to
+          # 10 minutes; report but do not fail if the Space stays in
+          # "Building" state — the push already succeeded.
+          SPACE_URL="https://${HF_SPACE_OWNER}-${HF_SPACE_NAME}.hf.space"
+          echo "Polling ${SPACE_URL}/health for up to 10 minutes ..."
+          deadline=$(( $(date +%s) + 600 ))
+          while [ "$(date +%s)" -lt "$deadline" ]; do
+            body=$(curl -fsS --max-time 10 "$SPACE_URL/health" 2>/dev/null || echo "")
+            if echo "$body" | grep -q '"status":"ok"'; then
+              echo "::notice::HF Space is responding: $body"
+              exit 0
+            fi
+            echo "  not yet up; sleeping 30s ..."
+            sleep 30
+          done
+          echo "::warning::HF Space did not return /health within 10 min."
+          echo "::warning::Push succeeded; check the Space's Logs tab manually."
