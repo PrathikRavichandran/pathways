@@ -83,11 +83,12 @@ Crisis handling is deliberately *less* configurable than the normal path. The mo
 
 ## Audit trail
 
-The system produces three streams of structured artifacts on every turn:
+The system produces four streams of structured artifacts on every turn:
 
 1. **Hook metadata.** Every hook returns a `hookMetadata` field with the hook name, action taken, and relevant inputs (e.g., crisis category, PII redaction count, confidence value). These are captured by the FastAPI ingress and persisted (in production) to the audit log.
 2. **Graph state snapshots.** LangGraph emits per-node state transitions. The `_debug/invoke` endpoint exposes the final state for inspection; production wires this to a tracing backend (LangSmith, OpenTelemetry).
 3. **Compliance auditor verdicts.** Every audit run produces a JSON verdict object (pass / soft_block / hard_block) with the specific issues found. The verdict is part of the graph state and can be inspected per turn.
+4. **Structured per-turn log lines.** As of Phase 7, the web-channel handler emits one line per turn keyed on the truncated salted thread ID: `web_turn_map_metrics thread=... cards_total=N cards_with_coords=N map_renders=0|1 language=en`. PII-safe by construction (truncated hash, no message bodies, no PII fields). A downstream log shipper (Loki, Datadog) can group on these keys to answer "how often does the map view actually render?" without opening the dashboard.
 
 Together these give an investigator answers to "why did the system do what it did on turn N for user X?" without exposing PII (because of the view layer + redaction hook).
 

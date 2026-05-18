@@ -173,3 +173,13 @@ The pieces that would land first in a real production deployment:
 6. **Partner-org refresh pipeline.** `tx-resources.json` is hand-curated; production runs a weekly Prefect job that pulls from partner APIs (TRLA, LSLA, TVC, TWC) and surfaces diffs for human review before merging.
 
 Each of these is an independent vertical with its own eval surface. That's the payoff for the layered design — improvements ship one slice at a time.
+
+## 11. Phase 7 additions (2026-05-18)
+
+Two changes layered on the existing architecture without restructuring it.
+
+**Resource map view in the PWA.** A new `web/src/components/ResourceMap.tsx` renders above the existing card list inside the bot bubble whenever any returned resource carries lat / lon. The architectural seam touched is the projection layer at `pathways/api/web.py::_shape_response`, which now forwards `lat` and `lon` from `matched_resources` into the `ResourceCard` Pydantic model via a defensive `_coerce_float` helper that handles psycopg `Decimal`, numeric strings, and garbage values without raising. The component self-gates: when no resource has both coordinates, it returns null and nothing renders. Statewide hotlines stay in the cards list but never pin. The dashboard's `conversation_events` table gained a `resources_with_coords_count` column with an `ALTER TABLE IF NOT EXISTS` migration, surfaced in `summary()` as `map_pins_total` + `turns_with_map_view`. A new structured log line `web_turn_map_metrics ...` emits per turn for operator tailing.
+
+**CI auto-deploy of main to the HF Space.** A new `.github/workflows/deploy-hf.yml` force-pushes `main` to `huggingface.co/spaces/prathik10/pathways` on every merge, then polls `/health` for up to 10 minutes (fail-soft). Force-push is required because HF Spaces start from an unrelated initial commit. The deploy workflow joins the existing four (`ci.yml`, `evals.yml`, `daily-cron.yml`, `refresh-data.yml`) for a total of five GitHub Actions workflows.
+
+Neither change altered the LangGraph state machine, the Skills / sub-agents / hooks layer, the MCP servers, or the safety architecture. They are additive: a new UI surface on the PWA side plus a new analytics column, and an ops automation that closes a manual gap.

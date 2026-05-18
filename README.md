@@ -14,7 +14,7 @@ short_description: AI navigator for post-incarceration reentry in Texas
 
 [![CI](https://github.com/PrathikRavichandran/pathways/actions/workflows/ci.yml/badge.svg)](https://github.com/PrathikRavichandran/pathways/actions/workflows/ci.yml)
 [![Evals](https://github.com/PrathikRavichandran/pathways/actions/workflows/evals.yml/badge.svg)](https://github.com/PrathikRavichandran/pathways/actions/workflows/evals.yml)
-[![Tests](https://img.shields.io/badge/tests-241%20unit%20%2B%2073%20evals-brightgreen)](https://github.com/PrathikRavichandran/pathways/actions)
+[![Tests](https://img.shields.io/badge/tests-305%20unit%20%2B%2073%20evals-brightgreen)](https://github.com/PrathikRavichandran/pathways/actions)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![HF Space](https://img.shields.io/badge/%F0%9F%A4%97%20HF%20Space-live-yellow)](https://prathik10-pathways.hf.space/docs)
 [![PWA](https://img.shields.io/badge/PWA-pathways--iota.vercel.app-7AB182)](https://pathways-iota.vercel.app/)
@@ -23,7 +23,7 @@ A conversational AI navigator for people leaving incarceration in Texas. Built a
 
 This repo is both a real product-in-progress AND an opinionated demonstration of how Claude Code primitives compose when wrong answers cause real harm: legal misinformation, missed deadlines, lost benefits, or a missed crisis signal.
 
-> **Status:** Phase 6 complete. The system runs end-to-end across three audiences (SMS user, PWA user, caseworker dashboard) on the same FastAPI + LangGraph + Skills + MCP backend. Quality signal: **241 unit tests + 73 eval scenarios** all green; CI gates merges on a per-category pass rate with crisis at 100%. Two items remain deferred-with-design ([`docs/PHASE6_DEFERRED.md`](docs/PHASE6_DEFERRED.md)): MMS photo extraction and warm-transfer voice, both blocked by paid Twilio dependencies. The full chronological build is in [`docs/JOURNAL.md`](docs/JOURNAL.md).
+> **Status:** Phase 7 complete (2026-05-18). The system runs end-to-end across three audiences (SMS user, PWA user, caseworker dashboard) on the same FastAPI + LangGraph + Skills + MCP backend. Phase 7 added a Leaflet + OpenStreetMap map view above the PWA resource cards (with Google Maps deep-link), per-turn map-engagement analytics on the dashboard, and a CI auto-deploy workflow that mirrors `main` to the HF Space on every merge. Quality signal: **305 unit tests + 73 eval scenarios** all green; CI gates merges on a per-category pass rate with crisis at 100%. Two items remain deferred-with-design ([`docs/PHASE6_DEFERRED.md`](docs/PHASE6_DEFERRED.md)): MMS photo extraction and warm-transfer voice, both blocked by paid Twilio dependencies. The full chronological build is in [`docs/JOURNAL.md`](docs/JOURNAL.md); an interview-prep tour through every layer is in [`docs/INTERVIEW_BRIEFING.md`](docs/INTERVIEW_BRIEFING.md).
 
 ---
 
@@ -31,13 +31,14 @@ This repo is both a real product-in-progress AND an opinionated demonstration of
 
 | Surface | URL | Try this |
 |---|---|---|
-| 📱 **Live PWA** | <https://pathways-iota.vercel.app/> | Installable on iOS + Android home screens. Forest + Marigold palette, bilingual UI, four quick-start chips. |
-| 🩺 **API health** | <https://prathik10-pathways.hf.space/health> | Returns `{"status":"ok","version":"0.6.0", "channels":["sms","web"], "modules":["dashboard","parole_reminders","writeback"]}` |
+| 📱 **Live PWA** | <https://pathways-iota.vercel.app/> | Installable on iOS + Android home screens. Forest + Marigold palette, bilingual UI, four quick-start chips. Resource cards with a Leaflet map view above them on geo queries. |
+| 🩺 **API health** | <https://prathik10-pathways.hf.space/health> | Returns `{"status":"ok","version":"0.7.0", "channels":["sms","web"], "modules":["dashboard","parole_reminders","writeback","audit"]}` |
 | 📚 **OpenAPI / Swagger** | <https://prathik10-pathways.hf.space/docs> | Interactive. Try `/_debug/invoke` with `{"message":"Can I vote in Texas if I'm on parole?"}` |
-| 📊 **Caseworker dashboard** | <https://prathik10-pathways.hf.space/dashboard/> | Token-gated. Demo mode accepts any `Authorization: Bearer <anything>`. Anonymized aggregates only; no PII ever stored. |
+| 📊 **Caseworker dashboard** | <https://prathik10-pathways.hf.space/dashboard/> | Token-gated. Demo mode accepts any `Authorization: Bearer <anything>`. Anonymized aggregates only; no PII ever stored. Includes per-turn map-engagement counts as of Phase 7. |
 | 🧠 **Architecture deep-dive** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Why each Claude Code primitive is load-bearing in a safety-critical domain |
 | 🎬 **Per-primitive walkthrough** | [`docs/SHOWCASE.md`](docs/SHOWCASE.md) | Code-trace tour: see exactly what a Skill, sub-agent, hook, and MCP server look like in practice |
-| 📓 **Dev journal** | [`docs/JOURNAL.md`](docs/JOURNAL.md) | Public build log, six phases, every shipped feature dated |
+| 📓 **Dev journal** | [`docs/JOURNAL.md`](docs/JOURNAL.md) | Public build log, seven phases, every shipped feature dated |
+| 🎓 **Interview briefing** | [`docs/INTERVIEW_BRIEFING.md`](docs/INTERVIEW_BRIEFING.md) | Cold-readable study guide: 60-second pitch, Claude Code primitives section by section, rehearsal Q&A |
 | 💬 **Sample conversations** | [`examples/sample_conversations.md`](examples/sample_conversations.md) | 5 fully-annotated SMS dialogues end-to-end |
 
 ### Install as a Claude Code plugin (loads all 7 Skills + 4 sub-agents + 3 hooks into your own session)
@@ -217,6 +218,9 @@ You'll see: `intake-assessment` Skill auto-loads → routes to `housing-pathway`
 | Twilio webhook + signature verification + TCPA STOP/HELP/START (Phase 1) | **Real**, trial-mode aware |
 | Spanish + multi-need routing + Spanish crisis hook patterns (Phase 3) | **Real** |
 | PWA channel at `/web/*` + React 19 installable PWA (Phase 4) | **Real**, [live on Vercel](https://pathways-iota.vercel.app/) |
+| Leaflet + OpenStreetMap resource-map view above the cards with Google Maps deep-link (Phase 7) | **Real**, self-gates when no resource has coordinates; HRSA + curated metro entries pin in production |
+| Per-turn map-engagement analytics: `resources_with_coords_count` column + `map_pins_total` / `turns_with_map_view` summary aggregates + structured `web_turn_map_metrics` log line (Phase 7) | **Real** |
+| CI auto-deploy of `main` to the HF Space via `.github/workflows/deploy-hf.yml` (Phase 7) | **Real**, force-push + 10-min `/health` poll, needs `HF_TOKEN` repo secret with write scope |
 | Provider-pluggable LLM (`pathways/llm/`) with Anthropic default + Gemini fallback (Phase 5) | **Real** |
 | Eval harness with 73 frozen scenarios + CI gate (Phase 5) | **Real**, crisis category must be 100% to merge |
 | Hybrid retrieval (BM25 + BGE-small dense, RRF fusion; opt-in) | **Real**, falls back to BM25 if sidecar or sentence-transformers missing |
@@ -234,7 +238,9 @@ The technical surface is comprehensive. What it needs now is real users and real
 
 **Operator-side wiring left to do** (~half a day):
 1. Set `PATHWAYS_ADMIN_TOKEN` on the HF Space and add a daily GitHub Actions cron to POST to `/admin/run-parole-reminders`.
-2. Wire the forward phone map (`pathways/sessions/phone_map.py` with a small `session_phones` table; encrypt with `PATHWAYS_PHONE_ENCRYPTION_KEY`). Until this is in place, both parole reminders and NGO write-back persist in their queues and the daily cron reports `skipped_no_phone` honestly.
+2. Set `HF_TOKEN` (write-scope HF access token) as a repo secret so `.github/workflows/deploy-hf.yml` can push merges to the HF Space automatically; then `gh workflow run deploy-hf.yml --ref main` once to fire the first sync.
+3. Wire the forward phone map (`pathways/sessions/phone_map.py` with a small `session_phones` table; encrypt with `PATHWAYS_PHONE_ENCRYPTION_KEY`). Until this is in place, both parole reminders and NGO write-back persist in their queues and the daily cron reports `skipped_no_phone` honestly.
+4. Geocode the demo seed at `mcp_servers/tx_resources/resources.json` (one-line-per-entry lat/lon enrichment for the metro-Houston and metro-DFW rows) so the Phase 7 map view also renders against the seed catalog in pure-demo mode. Production already pins via the HRSA + curated metro ingest.
 
 **Then partner outreach.** The dashboard exists so partner NGOs can see what's flowing through their region; that conversation is what unlocks pilot users.
 

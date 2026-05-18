@@ -10,6 +10,14 @@ The four items that *did* ship in Phase 6 are:
 - #5 NGO write-back queue (`POST /dashboard/api/writeback`)
 - Plus chunk B: eval harness expansion (+25 scenarios, +5 scorers)
 
+Phase 7 shipped two more items on top of Phase 6 (see `docs/JOURNAL.md`
+for the dated entries):
+- Resource map view in the PWA (Leaflet + OpenStreetMap + Google Maps
+  deep-link), with `resources_with_coords_count` per-turn analytics and
+  the `web_turn_map_metrics` structured log line.
+- CI auto-deploy of `main` to the HF Space via
+  `.github/workflows/deploy-hf.yml`.
+
 The two below remain deferred.
 
 ---
